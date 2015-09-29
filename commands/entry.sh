@@ -2,6 +2,8 @@
 
 set -e
 
+[ "$DEBUG" == 'true' ] && set -x
+
 if [ -f "/commands/$1" ]; then
     exec "/commands/$@"
 else

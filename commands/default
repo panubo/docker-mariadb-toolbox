@@ -2,6 +2,7 @@
 
 set -e
 
+[ "$DEBUG" == 'true' ] && set -x
 
 cat << EOF
 

@@ -2,6 +2,8 @@
 
 set -e
 
+[ "$DEBUG" == 'true' ] && set -x
+
 genpasswd() {
     export LC_CTYPE=C  # Quiet tr warnings
     local l=$1
