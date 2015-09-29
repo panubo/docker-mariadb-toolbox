@@ -15,6 +15,8 @@ Alternatively specify the individual variables:
 
 Requires the dumps to be mounted at `/data` (unless overriden) and named `<database>.sql.gz`.
 
+This means the database will be created with a name that is derived from the import filename.
+
 ## Usage Example
 
 ```docker run --rm -i -t -v /mnt/data00/migrations:/data -e DATABASE_HOST=172.19.66.4 -e DATABASE_USER=root -e DATABASE_PASS=foo quay.io/panubo/mariadb-toolbox import```
