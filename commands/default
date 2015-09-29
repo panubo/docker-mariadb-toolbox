@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -e
+
+
+cat << EOF
+
+  Please choose a command:
+
+     backup
+
+     create-user
+
+     convert-to-innodb <databases>
+
+     import
+
+EOF
+
