@@ -2,6 +2,13 @@
 
 set -e -o pipefail
 
+if [ "$1" == '--no-delete-database' ]; then
+    shift;
+    DELETE_DB=false
+else
+    DELETE_DB=true
+fi
+
 if [ -z "${DATABASE_HOST}" ]; then
     echo -n "=> Using Docker Links for configuration "
     DATABASE_PASS=$MARIADB_ENV_MYSQL_ROOT_PASSWORD
@@ -23,6 +30,11 @@ echo ">>> Loading Database Dumps from from ${DATA_SRC}."
 
 for DUMP in `ls ${DATA_SRC}/*.sql.gz`; do
     DB=$(basename $DUMP | sed 's@.sql.gz@@g')
+    if [ "$DELETE_DB" == 'true' ]; then
+        echo -n "Deleting $DB... "
+        echo "DROP DATABASE IF EXISTS $DB;" | $MYSQL
+        echo "Done."
+    fi
     echo -n "Loading $DUMP as $DB... "
     echo "CREATE DATABASE IF NOT EXISTS $DB;" | $MYSQL
     gunzip --stdout $DUMP | $MYSQL $DB
