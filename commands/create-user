@@ -8,7 +8,9 @@ genpasswd() {
     export LC_CTYPE=C  # Quiet tr warnings
     local l=$1
     [ "$l" == "" ] && l=16
+    set +o pipefail
     strings < /dev/urandom | tr -dc A-Za-z0-9_ | head -c ${l}
+    set -o pipefail
 }
 
 if [ "$1" == '--no-create-database' ]; then
