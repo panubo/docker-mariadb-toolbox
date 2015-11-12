@@ -21,7 +21,7 @@ if [ -z "${DATABASE_HOST}" ]; then
 else
     echo -n  "=> Using variables for configuration "
     DATABASE_HOST=${DATABASE_HOST-localhost}
-    DATABASE_PORT={DATABASE_PORT-3306}
+    DATABASE_PORT=${DATABASE_PORT-3306}
     echo "mysql://${DATABASE_HOST}:$DATABASE_PORT"
 fi
 
