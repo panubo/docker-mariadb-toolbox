@@ -39,6 +39,9 @@ else
     echo "mysql://${DATABASE_HOST}:$DATABASE_PORT"
 fi
 
+# Echo password if its generated
+ECHO_PASSWORD='false' && [ "$2" == '' ] && ECHO_PASSWORD='true'
+
 USER=$1
 PASS=${2-$(genpasswd 8)}
 MYSQL="mysql --host=${DATABASE_HOST} --port=${DATABASE_PORT} --user=${DATABASE_USER} --password=${DATABASE_PASS}"
@@ -53,6 +56,7 @@ if [ "$CREATE_DB" == 'true' ]; then
     echo "CREATE DATABASE IF NOT EXISTS ${USER};" | $MYSQL
 fi
 echo "GRANT ALL ON ${USER}.* to ${USER}@'%' IDENTIFIED BY '$PASS';" | $MYSQL
+[ "$ECHO_PASSWORD" == 'false' ] && PASS='********'
 echo "Created: ${USER} / ${PASS}"
 echo "FLUSH PRIVILEGES;" | $MYSQL
 echo ">>> Finished."
