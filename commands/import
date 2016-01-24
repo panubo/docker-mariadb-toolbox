@@ -34,11 +34,11 @@ for DUMP in `ls ${DATA_SRC}/*.sql.gz`; do
     DB=$(basename $DUMP | sed 's@.sql.gz@@g')
     if [ "$DELETE_DB" == 'true' ]; then
         echo -n "Deleting $DB... "
-        echo "DROP DATABASE IF EXISTS $DB;" | $MYSQL
+        echo "DROP DATABASE IF EXISTS \`$DB\`;" | $MYSQL
         echo "Done."
     fi
     echo -n "Loading $DUMP as $DB... "
-    echo "CREATE DATABASE IF NOT EXISTS $DB;" | $MYSQL
+    echo "CREATE DATABASE IF NOT EXISTS \`$DB\`;" | $MYSQL
     gunzip --stdout $DUMP | $MYSQL $DB
     echo "Done."
 done
