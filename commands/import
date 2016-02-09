@@ -26,7 +26,7 @@ else
 fi
 
 DATA_SRC=${DATA_SRC-'/data/'}
-MYSQL="mysql --host=${DATABASE_HOST} --port=${DATABASE_PORT} --user=${DATABASE_USER} --password=${DATABASE_PASS}"
+MYSQL="mysql --host=${DATABASE_HOST} --port=${DATABASE_PORT} --user=${DATABASE_USER} --password=${DATABASE_PASS} --one-database"
 
 echo ">>> Loading Database Dumps from from ${DATA_SRC}."
 
