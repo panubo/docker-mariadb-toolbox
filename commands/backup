@@ -1,4 +1,4 @@
-#!/usr/bin/env bash 
+#!/usr/bin/env bash
 
 set -e -o pipefail
 
@@ -9,12 +9,17 @@ if [ -z "$BACKUP_DIR" ]; then
     exit 128
 fi
 
+if [ -z "$1" ]; then
+    DATABASES=$@
+else
+    DATABASES=$($MYSQL -rs -e "SHOW DATABASES" | grep -v -E '(information_schema|performance_schema)')
+fi
+
 MYCONN="--user=${DATABASE_USER-root} --password=${DATABASE_PASS-${MARIADB_ENV_MYSQL_ROOT_PASSWORD}} --host=${DATABASE_HOST-${MARIADB_PORT_3306_TCP_ADDR-localhost}} --port=${MARIADB_PORT_3306_TCP_PORT-${DATABASE_PORT-3306}}"
 MYSQL="mysql ${MYCONN}"
 GZIP="gzip --fast"
 MYDUMP="mysqldump ${MYCONN}"
 BACKUP_PATH="${BACKUP_DIR}/$(date +%Y%m%d%H%M)"
-DATABASES=$($MYSQL -rs -e "SHOW DATABASES" | grep -v -E '(information_schema|performance_schema)')
 RETENTION_DAYS=${RETENTION_DAYS-14}
 
 # Perform the backup
@@ -28,6 +33,6 @@ echo ". Done."
 
 # Delete expired backups
 echo -n "Cleanup... "
-find ${BACKUP_DIR} -name "*.sql.gz" -mtime +$RETENTION_DAYS -exec rm -f {} \; 
+find ${BACKUP_DIR} -name "*.sql.gz" -mtime +$RETENTION_DAYS -exec rm -f {} \;
 find ${BACKUP_DIR} -type d -empty -delete
 echo "Done."

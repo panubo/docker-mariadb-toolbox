@@ -1,6 +1,6 @@
-# Backup all databases
+# Backup databases
 
-Command to backup all databases and place in a timestamped directory.
+Command to backup databases and place in a timestamped directory.
 
 ## Environment Configuration
 
@@ -16,3 +16,7 @@ Or alternatively specify the individual variables:
 ### Environment Options
 
 - `BACKUP_DIR` backup location
+
+### Options
+
+- `<databases>...` name of database(s) to dump. If not specified all databases will be dumped.
