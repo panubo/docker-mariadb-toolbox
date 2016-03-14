@@ -1,17 +1,8 @@
 #!/usr/bin/env bash
 
 set -e -o pipefail
-
 [ "$DEBUG" == 'true' ] && set -x
-
-genpasswd() {
-    export LC_CTYPE=C  # Quiet tr warnings
-    local l=$1
-    [ "$l" == "" ] && l=16
-    set +o pipefail
-    strings < /dev/urandom | tr -dc A-Za-z0-9_ | head -c ${l}
-    set -o pipefail
-}
+. "$(dirname $0)/"common.sh
 
 if [ "$1" == '--no-create-database' ]; then
     shift;
@@ -25,38 +16,25 @@ if [ -z "$1" ]; then
     exit 128
 fi
 
-if [ -z "${DATABASE_HOST}" ]; then
-    echo -n "=> Using Docker Links for configuration "
-    DATABASE_PASS=$MARIADB_ENV_MYSQL_ROOT_PASSWORD
-    DATABASE_USER=root
-    DATABASE_HOST=$MARIADB_PORT_3306_TCP_ADDR
-    DATABASE_PORT=$MARIADB_PORT_3306_TCP_PORT
-    echo "mysql://${DATABASE_HOST}:$DATABASE_PORT"
-else
-    echo -n  "=> Using variables for configuration "
-    DATABASE_HOST=${DATABASE_HOST-localhost}
-    DATABASE_PORT=${DATABASE_PORT-3306}
-    echo "mysql://${DATABASE_HOST}:$DATABASE_PORT"
-fi
-
-# Echo password if its generated
+# Echo password if it's generated
 ECHO_PASSWORD='false' && [ "$2" == '' ] && ECHO_PASSWORD='true'
 
-USER=$1
-PASS=${2-$(genpasswd 8)}
-MYSQL="mysql --host=${DATABASE_HOST} --port=${DATABASE_PORT} --user=${DATABASE_USER} --password=${DATABASE_PASS}"
+NEW_USER=$1
+NEW_PASS=${2-$(genpasswd 8)}
+
+wait_mariadb
 
 if [ "$CREATE_DB" == 'true' ]; then
-    echo ">>> Creating user and database: $USER..."
+    echo ">>> Creating user and database: $NEW_USER..."
 else
-    echo ">>> Creating user: $USER..."
+    echo ">>> Creating user: $NEW_USER..."
 fi
 
 if [ "$CREATE_DB" == 'true' ]; then
-    echo "CREATE DATABASE IF NOT EXISTS ${USER};" | $MYSQL
+    echo "CREATE DATABASE IF NOT EXISTS ${NEW_USER};" | $MYSQL
 fi
-echo "GRANT ALL ON ${USER}.* to ${USER}@'%' IDENTIFIED BY '$PASS';" | $MYSQL
-[ "$ECHO_PASSWORD" == 'false' ] && PASS='********'
-echo "Created: ${USER} / ${PASS}"
+echo "GRANT ALL ON ${NEW_USER}.* to ${NEW_USER}@'%' IDENTIFIED BY '$NEW_PASS';" | $MYSQL
+[ "$ECHO_PASSWORD" == 'false' ] && NEW_PASS='********'
+echo "Created: ${NEW_USER} / ${NEW_PASS}"
 echo "FLUSH PRIVILEGES;" | $MYSQL
 echo ">>> Finished."

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 set -e -o pipefail
-
 [ "$DEBUG" == 'true' ] && set -x
+. "$(dirname $0)/"common.sh
 
 if [ "$1" == '--no-delete-database' ]; then
     shift;
@@ -11,22 +11,9 @@ else
     DELETE_DB=true
 fi
 
-if [ -z "${DATABASE_HOST}" ]; then
-    echo -n "=> Using Docker Links for configuration "
-    DATABASE_PASS=$MARIADB_ENV_MYSQL_ROOT_PASSWORD
-    DATABASE_USER=root
-    DATABASE_HOST=$MARIADB_PORT_3306_TCP_ADDR
-    DATABASE_PORT=$MARIADB_PORT_3306_TCP_PORT
-    echo "mysql://${DATABASE_HOST}:$DATABASE_PORT"
-else
-    echo -n  "=> Using variables for configuration "
-    DATABASE_HOST=${DATABASE_HOST-localhost}
-    DATABASE_PORT=${DATABASE_PORT-3306}
-    echo "mysql://${DATABASE_HOST}:$DATABASE_PORT"
-fi
-
 DATA_SRC=${DATA_SRC-'/data/'}
-MYSQL="mysql --host=${DATABASE_HOST} --port=${DATABASE_PORT} --user=${DATABASE_USER} --password=${DATABASE_PASS}"
+
+wait_mariadb
 
 echo ">>> Loading Database Dumps from from ${DATA_SRC}."
 

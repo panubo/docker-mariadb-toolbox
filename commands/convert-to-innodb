@@ -1,19 +1,18 @@
 #!/usr/bin/env bash 
 
 set -e -o pipefail
-
 [ "$DEBUG" == 'true' ] && set -x
+. "$(dirname $0)/"common.sh
+
+wait_mariadb
 
 DATABASES=$@
 
-MYCONN="--user=${DATABASE_USER-root} --password=${DATABASE_PASS-${MARIADB_ENV_MYSQL_ROOT_PASSWORD}} --host=${DATABASE_HOST-${MARIADB_PORT_3306_TCP_ADDR-localhost}} --port=${MARIADB_PORT_3306_TCP_PORT-${DATABASE_PORT-3306}}"
-MYSQL="mysql ${MYCONN}"
-
 # Convert to Innodb
 for DB in $DATABASES; do
-    TO_CONVERT=$(echo "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \"$DB\" and engine = 'MyISAM';" | $MYSQL)
+    TO_CONVERT=$(echo "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = \"$DB\" AND ENGINE = 'MyISAM';" | $MYSQL --skip-column-names)
     echo -n "Converting $TO_CONVERT in $DB..."
-    echo $TO_CONVERT | awk '!/^Tables_in_/ {print "ALTER TABLE `"$0"` ENGINE = InnoDB;"}' | $MYSQL
+    echo "ALTER TABLE $TO_CONVERT ENGINE=InnoDB;" | $MYSQL $DB
     echo ". Done."
 done
 

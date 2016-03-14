@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 set -e -o pipefail
-
 [ "$DEBUG" == 'true' ] && set -x
+. "$(dirname $0)/"common.sh
 
 if [ "$1" == '--no-delete-database' ]; then
     shift;
@@ -11,38 +11,25 @@ else
     DELETE_DB=true
 fi
 
-if [ -z "$2" ]; then
+if [ ! -z "$2" ]; then
     DB_SRC=$1
     DB_DST=$2
 else
-    echo "You must specify a <source> and <destination> database to."
+    echo "You must specify a <source> and <destination> database."
     exit 99
 fi
 
-if [ -z "${DATABASE_HOST}" ]; then
-    echo -n "=> Using Docker Links for configuration "
-    DATABASE_PASS=$MARIADB_ENV_MYSQL_ROOT_PASSWORD
-    DATABASE_USER=root
-    DATABASE_HOST=$MARIADB_PORT_3306_TCP_ADDR
-    DATABASE_PORT=$MARIADB_PORT_3306_TCP_PORT
-    echo "mysql://${DATABASE_HOST}:$DATABASE_PORT"
-else
-    echo -n  "=> Using variables for configuration "
-    DATABASE_HOST=${DATABASE_HOST-localhost}
-    DATABASE_PORT=${DATABASE_PORT-3306}
-    echo "mysql://${DATABASE_HOST}:$DATABASE_PORT"
-fi
+wait_mariadb
 
-DATA_SRC=${DATA_SRC-'/data/'}
-MYSQL="mysql --host=${DATABASE_HOST} --port=${DATABASE_PORT} --user=${DATABASE_USER} --password=${DATABASE_PASS}"
+DATA_SRC=${DATA_SRC-'/data'}
 
 echo -n "Dumping..."
 echo -n " $DB_SRC"
-$MYDUMP --opt --single-transaction --flush-logs --events --databases ${DB_SRC} | $GZIP > "${DATA_SRC}/${DB_SRC}.sql.gz"
+$MYSQLDUMP --opt --single-transaction --flush-logs --events ${DB_SRC} | $GZIP > "${DATA_SRC}/${DB_SRC}.sql.gz"
 echo ". Done."
 
 echo ">>> Loading Database Dump from from ${DATA_SRC}."
-$DUMP="${DATA_SRC}/${DB_SRC}.sql.gz"
+DUMP="${DATA_SRC}/${DB_SRC}.sql.gz"
 if [ "$DELETE_DB" == 'true' ]; then
     echo -n "Deleting $DB_DST... "
     echo "DROP DATABASE IF EXISTS \`$DB_DST\`;" | $MYSQL
@@ -50,7 +37,7 @@ if [ "$DELETE_DB" == 'true' ]; then
 fi
 echo -n "Loading $DB_SRC as $DB_DST... "
 echo "CREATE DATABASE IF NOT EXISTS \`$DB_DST\`;" | $MYSQL
-gunzip --stdout $DUMP | $MYSQL --one-database $DB
+gunzip --stdout $DUMP | $MYSQL --one-database $DB_DST
 echo "Done."
 
 echo "Finished."

@@ -11,6 +11,7 @@ Documentation for each subcommand:
 - [Backup](commands/backup.md)
 - [Create User](commands/create-user.md)
 - [Convert to InnoDB](commands/convert-to-innodb.md)
+- [MySQL](commands/mysql.md)
 - [Import](commands/import.md)
 - [Copy Database](commands/copy-database.md)
 
