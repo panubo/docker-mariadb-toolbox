@@ -13,7 +13,7 @@ GZIP="gzip --fast"
 function wait_mariadb {
     # Wait for MariaDB to be available
     TIMEOUT=${3:-30}
-    echo -n "Waiting to connect to MariaDB at $HOST:$PORT"
+    echo -n "Waiting to connect to MariaDB at ${1-$HOST}:${2-$PORT}"
     for (( i=0;; i++ )); do
         if [ ${i} -eq ${TIMEOUT} ]; then
             echo " timeout!"
