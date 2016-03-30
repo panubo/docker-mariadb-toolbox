@@ -36,4 +36,14 @@ echo ". Done."
 echo -n "Cleanup... "
 find ${BACKUP_DIR} -name "*.sql.gz" -mtime +$RETENTION_DAYS -exec rm -f {} \;
 find ${BACKUP_DIR} -type d -empty -delete
+
+# Link latest backup (done as hardlinks in order to make it easier to backup with rsync)
+echo -n "Linking latest... "
+rm -rf "${BACKUP_DIR}/latest"
+mkdir "${BACKUP_DIR}/latest"
+for B in $BACKUP_PATH/*; do
+    TARGET=$(basename $B)
+    ln $B "${BACKUP_DIR}/latest/$TARGET"
+done
+
 echo "Done."
