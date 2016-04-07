@@ -20,3 +20,10 @@ Or alternatively specify the individual variables:
 ### Options
 
 - `<databases>...` name of database(s) to dump. If not specified all databases will be dumped.
+
+## Example
+
+```
+docker run --rm -t -i --link mariadb -e BACKUP_DIR=/data -v /data:/mnt/data/tmp quay.io/panubo/mariadb-toolbox backup db1 db2
+
+```
