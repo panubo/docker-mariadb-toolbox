@@ -10,11 +10,23 @@ A collection of MySQL / MariaDB tools for automating common tasks in a Docker-ce
 Documentation for each subcommand:
 
 - [Backup](commands/backup.md)
-- [Create User](commands/create-user.md)
+- [Copy Database](commands/copy-database.md)
 - [Convert to InnoDB](commands/convert-to-innodb.md)
+- [Create User](commands/create-user.md)
 - [MySQL](commands/mysql.md)
 - [Import](commands/import.md)
-- [Copy Database](commands/copy-database.md)
+
+## Usage
+
+Using Docker links to `mariadb` container:
+
+```docker run --rm -i -t --link mariadb:mariadb quay.io/panubo/mariadb-toolbox```
+
+This will display the usage information.
+
+```docker run --rm -i -t --link mariadb:mariadb quay.io/panubo/mariadb-toolbox <subcommand>```
+
+To run the subcommand.
 
 ## Configuration
 
@@ -27,13 +39,7 @@ Or alternatively specify the variables:
 - `DATABASE_USER` = Administrative user eg root with CREATEDB privileges.
 - `DATABASE_PASS` = Password of administrative user.
 
-## Usage
-
-Using Docker links to `mariadb` container:
-
-```docker run --rm -i -t --link mariadb:mariadb quay.io/panubo/mariadb-toolbox```
-
-This will display the usage information.
+Some subcommands require additional environment parameters.
 
 ## Status
 
