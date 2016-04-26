@@ -8,7 +8,7 @@ cat << EOF
 
   Please choose a command:
 
-     backup
+     backup <databases>
 
      copy-database <source> <destination>
 
@@ -16,9 +16,8 @@ cat << EOF
 
      convert-to-innodb <databases>
 
-     import
+     import - import dumps.
 
      mysql - start a MySQL client session
 
 EOF
-
