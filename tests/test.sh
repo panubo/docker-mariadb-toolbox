@@ -13,6 +13,11 @@ docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password mariad
 docker run -t -i --name $TEST_NAME --link mariadb -e BACKUP_DIR=/backup $TEST_CONTAINER backup
 cleanup mariadb $TEST_NAME
 
+echo "=> Test check command"
+docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password mariadb:latest > /dev/null
+docker run -t -i --name $TEST_NAME --link mariadb $TEST_CONTAINER check
+cleanup mariadb $TEST_NAME
+
 echo "=> Test copy-database command"
 docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password mariadb:latest > /dev/null
 docker run -t -i --name $TEST_NAME --link mariadb -e BACKUP_DIR=/backup -v /tmp/data:/data $TEST_CONTAINER copy-database mysql mysql-backup

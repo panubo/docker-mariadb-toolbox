@@ -10,6 +10,7 @@ A collection of MySQL / MariaDB tools for automating common tasks in a Docker-ce
 Documentation for each subcommand:
 
 - [Backup](commands/backup.md)
+- [Check](commands/check.md)
 - [Copy Database](commands/copy-database.md)
 - [Convert to InnoDB](commands/convert-to-innodb.md)
 - [Create User](commands/create-user.md)
