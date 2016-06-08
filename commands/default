@@ -10,13 +10,15 @@ cat << EOF
 
      backup <databases>
 
+     check <databases>
+
      copy-database <source> <destination>
 
      create-user <username>
 
      convert-to-innodb <databases>
 
-     import - import dumps.
+     import - import dumps
 
      mysql - start a MySQL client session
 
