@@ -9,6 +9,7 @@ Use `--link <mariadb container name>:mariadb` to automatically specify the requi
 Alternatively specify the individual variables:
 
 - `DATABASE_HOST` = IP / hostname of MariaDB / MySQL server.
+- `DATABASE_PORT` = TCP Port of MariaDB / MySQL service.
 - `DATABASE_USER` = Administrative user eg root with CREATEDB privileges.
 - `DATABASE_PASS` = Password of administrative user.
 - `DATA_SRC` = Data source. This is where your dumps are.
