@@ -11,9 +11,6 @@ fi
 
 wait_mariadb
 
-MYSQL="mysql ${MYCONN}"
-GZIP="gzip --fast"
-MYDUMP="mysqldump ${MYCONN}"
 BACKUP_PATH="${BACKUP_DIR}/$(date +%Y%m%d%H%M)"
 RETENTION_DAYS=${RETENTION_DAYS-14}
 
@@ -28,7 +25,7 @@ mkdir -p "$BACKUP_PATH"
 echo -n "Dumping..."
 for DB in $DATABASES; do
     echo -n " $DB"
-    $MYDUMP --opt --single-transaction --flush-logs --events --databases ${DB} | $GZIP > "${BACKUP_PATH}/${DB}.sql.gz"
+    $MYSQLDUMP --opt --single-transaction --flush-logs --events --databases ${DB} | $GZIP > "${BACKUP_PATH}/${DB}.sql.gz"
 done
 echo ". Done."
 

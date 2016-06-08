@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
-HOST=${DATABASE_HOST-${MARIADB_PORT_3306_TCP_ADDR-localhost}} 
+HOST=${DATABASE_HOST-${MARIADB_PORT_3306_TCP_ADDR-localhost}}
 PORT=${MARIADB_PORT_3306_TCP_PORT-${DATABASE_PORT-3306}}
 USER=${DATABASE_USER-root}
 PASS=${DATABASE_PASS-${MARIADB_ENV_MYSQL_ROOT_PASSWORD}}
 MYCONN="--user=${USER} --password=${PASS} --host=${HOST} --port=${PORT}"
 MYSQL="mysql ${MYCONN}"
 MYSQLDUMP="mysqldump $MYCONN"
+MYCHECK="mysqlcheck ${MYCONN}"
 GZIP="gzip --fast"
 
 
