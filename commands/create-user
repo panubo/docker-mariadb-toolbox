@@ -20,7 +20,7 @@ fi
 ECHO_PASSWORD='false' && [ "$2" == '' ] && ECHO_PASSWORD='true'
 
 NEW_USER=$1
-NEW_PASS=${2-$(genpasswd 8)}
+NEW_PASS=${2-$(genpasswd 16)}
 
 wait_mariadb
 
