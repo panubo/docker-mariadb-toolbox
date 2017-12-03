@@ -1,6 +1,5 @@
 # MariaDB Toolbox
 
-[![Docker Repository on Quay.io](https://quay.io/repository/panubo/mariadb-toolbox/status "Docker Repository on Quay.io")](https://quay.io/repository/panubo/mariadb-toolbox)
 [![Build Status](https://travis-ci.org/panubo/docker-mariadb-toolbox.svg?branch=master)](https://travis-ci.org/panubo/docker-mariadb-toolbox)
 
 A collection of MySQL / MariaDB tools for automating common tasks in a Docker-centric way.
@@ -21,11 +20,11 @@ Documentation for each subcommand:
 
 Using Docker links to `mariadb` container:
 
-```docker run --rm -i -t --link mariadb:mariadb quay.io/panubo/mariadb-toolbox```
+```docker run --rm -i -t --link myserver:mariadb docker.io/panubo/mariadb-toolbox```
 
 This will display the usage information.
 
-```docker run --rm -i -t --link mariadb:mariadb quay.io/panubo/mariadb-toolbox <subcommand>```
+```docker run --rm -i -t --link myserver:mariadb docker.io/panubo/mariadb-toolbox <subcommand>```
 
 To run the subcommand.
 
