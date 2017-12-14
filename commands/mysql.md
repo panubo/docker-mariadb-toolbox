@@ -11,5 +11,3 @@ Alternatively specify the individual variables:
 - `DATABASE_HOST` = IP / hostname of MariaDB / MySQL server.
 - `DATABASE_USER` = Administrative user eg root with CREATEDB privileges.
 - `DATABASE_PASS` = Password of administrative user.
-- `DATA_SRC` = Data source. This is where your dumps are.
-
