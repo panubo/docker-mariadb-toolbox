@@ -14,7 +14,7 @@ cat << EOF
 
      copy-database <source> <destination>
 
-     create-user <username>
+     create-user <username> <password>
 
      convert-to-innodb <databases>
 

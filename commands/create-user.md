@@ -15,7 +15,7 @@ Or alternatively specify the individual variables:
 
 ### Options
 
-- `--no-create-database` don't create databases
+- `--no-create-database` don't create database
 - `<username>` - required
 - `<password>` - option. If not specified then a random password will be generated.
 
