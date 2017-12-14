@@ -19,22 +19,22 @@ fi
 # Echo password if it's generated
 ECHO_PASSWORD='false' && [ "$2" == '' ] && ECHO_PASSWORD='true'
 
-NEW_USER=$1
+NEW_NAME=$1
 NEW_PASS=${2-$(genpasswd 16)}
 
 wait_mariadb
 
 if [ "$CREATE_DB" == 'true' ]; then
-    echo ">>> Creating user and database: $NEW_USER..."
+    echo ">>> Creating user and database: $NEW_NAME..."
 else
-    echo ">>> Creating user: $NEW_USER..."
+    echo ">>> Creating user: $NEW_NAME..."
 fi
 
 if [ "$CREATE_DB" == 'true' ]; then
-    echo "CREATE DATABASE IF NOT EXISTS ${NEW_USER};" | $MYSQL
+    echo "CREATE DATABASE IF NOT EXISTS ${NEW_NAME};" | $MYSQL
 fi
-echo "GRANT ALL ON ${NEW_USER}.* to ${NEW_USER}@'%' IDENTIFIED BY '$NEW_PASS';" | $MYSQL
+echo "GRANT ALL ON ${NEW_NAME}.* to ${NEW_NAME}@'%' IDENTIFIED BY '$NEW_PASS';" | $MYSQL
 [ "$ECHO_PASSWORD" == 'false' ] && NEW_PASS='********'
-echo "Created: ${NEW_USER} / ${NEW_PASS}"
+echo "Created: ${NEW_NAME} / ${NEW_PASS}"
 echo "FLUSH PRIVILEGES;" | $MYSQL
 echo ">>> Finished."
