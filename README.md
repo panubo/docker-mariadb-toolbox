@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/panubo/docker-mariadb-toolbox.svg?branch=master)](https://travis-ci.org/panubo/docker-mariadb-toolbox)
 
-A collection of MySQL / MariaDB tools for automating common tasks in a Docker-centric way.
+A collection of MySQL / MariaDB scripts for automating common DBA tasks in a Docker-centric way.
 
 ## Documentation
 
@@ -16,7 +16,7 @@ Documentation for each subcommand:
 - [MySQL](commands/mysql.md)
 - [Import](commands/import.md)
 
-## Usage
+## General Usage
 
 Using Docker links to `mariadb` container:
 
