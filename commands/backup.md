@@ -1,6 +1,7 @@
 # Backup databases
 
-Command to backup databases and place in a timestamped directory.
+Command to backup databases and place in a either a timestamped local directory
+or copied to any backend that [rclone](https://rclone.org) supports.
 
 ## Environment Configuration
 
@@ -15,7 +16,16 @@ Or alternatively specify the individual variables:
 
 ### Environment Options
 
-- `BACKUP_DIR` backup location
+- `BACKUP_DIR` local backup location
+or
+- `BACKUP_DESTINATION` object storage destination
+- `BACKUP_TMP_DIR` temporary location for backup file ( default `/tmp`)
+
+then specify [rclone environment](https://rclone.org/docs/#config-file) options for remote backends eg
+
+- `RCLONE_CONFIG_S3_TYPE=s3`
+- `RCLONE_CONFIG_S3_ACCESS_KEY_ID=XXX`
+- `RCLONE_CONFIG_S3_SECRET_ACCESS_KEY=YYY`
 
 ### Options
 

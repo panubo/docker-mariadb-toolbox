@@ -11,8 +11,50 @@ fi
 
 wait_mariadb
 
+# defaults
 BACKUP_PATH="${BACKUP_DIR}/$(date +%Y%m%d%H%M)"
 RETENTION_DAYS=${RETENTION_DAYS-14}
+BACKUP_TMP_DIR=${BACKUP_TMP_DIR:-'/tmp'}
+
+function local_backup {
+  # Perform the backup
+  mkdir -p "$BACKUP_PATH"
+  echo -n "Dumping..."
+  for DB in $DATABASES; do
+      echo -n " $DB"
+      $MYSQLDUMP --opt --single-transaction --flush-logs --events --databases ${DB} | $GZIP > "${BACKUP_PATH}/${DB}.sql.gz"
+  done
+  echo ". Done."
+
+  # Delete expired backups
+  echo -n "Cleanup... "
+  find ${BACKUP_DIR} -name "*.sql.gz" -mtime +$RETENTION_DAYS -exec rm -f {} \;
+  find ${BACKUP_DIR} -type d -empty -delete
+
+  # Link latest backup (done as hardlinks in order to make it easier to backup with rsync)
+  echo -n "Linking latest... "
+  rm -rf "${BACKUP_DIR}/latest"
+  mkdir "${BACKUP_DIR}/latest"
+  for B in $BACKUP_PATH/*; do
+      TARGET=$(basename $B)
+      ln $B "${BACKUP_DIR}/latest/$TARGET"
+  done
+}
+
+function remote_backup {
+  # Perform the backup
+  echo -n "Dumping..."
+  for DB in $DATABASES; do
+      echo -n " $DB"
+      $MYSQLDUMP --opt --single-transaction --flush-logs --events --databases ${DB} | $GZIP > "${BACKUP_TMP_DIR}/${DB}.sql.gz"
+  done
+  echo -n "Uploading..."
+  for DB in $DATABASES; do
+      echo -n " $DB"
+      rclone move "${BACKUP_TMP_DIR}/${DB}.sql.gz" ${BACKUP_DESTINATION}
+  done
+  echo ". Done."
+}
 
 if [ -z "$1" ]; then
     DATABASES=$($MYSQL -rs -e "SHOW DATABASES" | grep -v -E '(information_schema|performance_schema)')
@@ -20,27 +62,13 @@ else
     DATABASES=$@
 fi
 
-# Perform the backup
-mkdir -p "$BACKUP_PATH"
-echo -n "Dumping..."
-for DB in $DATABASES; do
-    echo -n " $DB"
-    $MYSQLDUMP --opt --single-transaction --flush-logs --events --databases ${DB} | $GZIP > "${BACKUP_PATH}/${DB}.sql.gz"
-done
-echo ". Done."
-
-# Delete expired backups
-echo -n "Cleanup... "
-find ${BACKUP_DIR} -name "*.sql.gz" -mtime +$RETENTION_DAYS -exec rm -f {} \;
-find ${BACKUP_DIR} -type d -empty -delete
-
-# Link latest backup (done as hardlinks in order to make it easier to backup with rsync)
-echo -n "Linking latest... "
-rm -rf "${BACKUP_DIR}/latest"
-mkdir "${BACKUP_DIR}/latest"
-for B in $BACKUP_PATH/*; do
-    TARGET=$(basename $B)
-    ln $B "${BACKUP_DIR}/latest/$TARGET"
-done
+if [ -z "${BACKUP_DIR}" ]; then
+    local_backup
+elif [ -z "${BACKUP_DESTINATION}" ]; then
+    remote_backup
+else
+  echo "Unknown backup type"
+  exit 128
+fi
 
 echo "Done."
