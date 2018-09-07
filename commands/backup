@@ -12,7 +12,8 @@ fi
 wait_mariadb
 
 # defaults
-BACKUP_PATH="${BACKUP_DIR}/$(date +%Y%m%d%H%M)"
+DATE_STAMP="$(date +%Y%m%d%H%M)"
+BACKUP_PATH="${BACKUP_DIR}/${DATE_STAMP}"
 RETENTION_DAYS=${RETENTION_DAYS-14}
 BACKUP_TMP_DIR=${BACKUP_TMP_DIR:-'/tmp'}
 
@@ -46,12 +47,12 @@ function remote_backup {
   echo -n "Dumping..."
   for DB in $DATABASES; do
       echo -n " $DB"
-      $MYSQLDUMP --opt --single-transaction --flush-logs --events --databases ${DB} | $GZIP > "${BACKUP_TMP_DIR}/${DB}.sql.gz"
+      $MYSQLDUMP --opt --single-transaction --flush-logs --events --databases ${DB} | $GZIP > "${BACKUP_TMP_DIR}/${DATE_STAMP}-${DB}.sql.gz"
   done
   echo -n "Uploading..."
   for DB in $DATABASES; do
       echo -n " $DB"
-      rclone move "${BACKUP_TMP_DIR}/${DB}.sql.gz" ${BACKUP_DESTINATION}
+      rclone move "${BACKUP_TMP_DIR}/${DATE_STAMP}-${DB}.sql.gz" ${BACKUP_DESTINATION}
   done
   echo ". Done."
 }
@@ -62,9 +63,9 @@ else
     DATABASES=$@
 fi
 
-if [ -z "${BACKUP_DIR}" ]; then
+if [ -n "${BACKUP_DIR}" ]; then
     local_backup
-elif [ -z "${BACKUP_DESTINATION}" ]; then
+elif [ -n "${BACKUP_DESTINATION}" ]; then
     remote_backup
 else
   echo "Unknown backup type"
