@@ -1,18 +1,23 @@
-NAME = panubo/mariadb-toolbox
-VERSION = `git describe --long --tags --dirty --always`
+NAME = mariadb-toolbox
+TAG = `git describe --long --tags --dirty --always`
+IMAGE_NAME := panubo/$(NAME)
 
-.PHONY: all build tag_latest test clean
+.PHONY: help build test clean push
 
-all:    clean build
+help:
+	@printf "$$(grep -hE '^\S+:.*##' $(MAKEFILE_LIST) | sed -e 's/:.*##\s*/:/' -e 's/^\(.\+\):\(.*\)/\\x1b[36m\1\\x1b[m:\2/' | column -c2 -t -s :)\n"
 
-build:
-	docker build --no-cache -t $(NAME):$(VERSION) .
+build: ## Builds docker image
+	docker build --pull -t $(IMAGE_NAME):$(TAG) .
 
-tag_latest:
-	docker tag -f $(NAME):$(VERSION) $(NAME):latest
-
-test:
+test: ## Run tests
 	./tests/dind-runner.sh
 
-clean:
-	docker images | grep $(NAME) | awk '{ print $$3 }' | xargs -r docker rmi
+clean: ## Remove built image
+	docker rmi $(IMAGE_NAME):$(TAG)
+
+push: ## Pushes the docker image to hub.docker.com
+	# Don't --pull here, we don't want any last minute upsteam changes
+	docker build -t $(IMAGE_NAME):$(TAG) .
+	docker tag $(IMAGE_NAME):$(TAG) docker.io/$(IMAGE_NAME):latest
+	docker push docker.io/$(IMAGE_NAME):latest
