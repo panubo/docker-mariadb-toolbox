@@ -25,7 +25,7 @@ DATA_SRC=${DATA_SRC-'/data'}
 
 echo -n "Dumping..."
 echo -n " $DB_SRC"
-$MYSQLDUMP --opt --single-transaction --flush-logs --events ${DB_SRC} | $GZIP > "${DATA_SRC}/${DB_SRC}.sql.gz"
+$MYSQLDUMP --opt --single-transaction --events ${DB_SRC} | $GZIP > "${DATA_SRC}/${DB_SRC}.sql.gz"
 echo ". Done."
 
 echo ">>> Loading Database Dump from from ${DATA_SRC}."
