@@ -25,7 +25,7 @@ mkdir -p "$BACKUP_PATH"
 echo -n "Dumping..."
 for DB in $DATABASES; do
     echo -n " $DB"
-    $MYSQLDUMP --opt --single-transaction --flush-logs --events --databases ${DB} | $GZIP > "${BACKUP_PATH}/${DB}.sql.gz"
+    $MYSQLDUMP --opt --single-transaction --events --databases ${DB} | $GZIP > "${BACKUP_PATH}/${DB}.sql.gz"
 done
 echo ". Done."
 
