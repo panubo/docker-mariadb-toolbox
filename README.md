@@ -1,6 +1,6 @@
 # MariaDB Toolbox
 
-[![Build Status](https://travis-ci.org/panubo/docker-mariadb-toolbox.svg?branch=master)](https://travis-ci.org/panubo/docker-mariadb-toolbox)
+[![CircleCI](https://circleci.com/gh/panubo/docker-mariadb-toolbox.svg?style=svg)](https://circleci.com/gh/panubo/docker-mariadb-toolbox)
 
 A collection of MySQL / MariaDB scripts for automating common DBA tasks in a Docker-centric way.
 
