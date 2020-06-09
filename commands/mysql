@@ -6,4 +6,4 @@ set -e -o pipefail
 
 wait_mariadb
 
-exec mysql
+exec $MYSQL

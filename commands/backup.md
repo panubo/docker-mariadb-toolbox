@@ -24,5 +24,5 @@ Or alternatively specify the individual variables:
 ## Example
 
 ```
-docker run --rm -t -i --link myserver:mariadb -e BACKUP_DIR=/data -v /mnt/backup:/data docker.io/panubo/mariadb-toolbox backup db1 db2
+docker run --rm -t -i --link myserver:mariadb -e BACKUP_DIR=/data -v /mnt/backup:/data docker.io/panubo/mariadb-toolbox:1.1.1 backup db1 db2
 ```

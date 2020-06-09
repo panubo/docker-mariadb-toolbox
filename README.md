@@ -4,6 +4,8 @@
 
 A collection of MySQL / MariaDB scripts for automating common DBA tasks in a Docker-centric way.
 
+Wherever possible the commands are compatible with Amazon RDS.
+
 ## Documentation
 
 Documentation for each subcommand:
@@ -20,11 +22,15 @@ Documentation for each subcommand:
 
 Using Docker links to `mariadb` container:
 
-```docker run --rm -i -t --link myserver:mariadb docker.io/panubo/mariadb-toolbox```
+```
+docker run --rm -i -t --link myserver:mariadb docker.io/panubo/mariadb-toolbox:1.1.1
+```
 
 This will display the usage information.
 
-```docker run --rm -i -t --link myserver:mariadb docker.io/panubo/mariadb-toolbox <subcommand>```
+```
+docker run --rm -i -t --link myserver:mariadb docker.io/panubo/mariadb-toolbox:1.1.1 <subcommand>
+```
 
 To run the subcommand.
 
@@ -39,7 +45,8 @@ Or alternatively specify the variables:
 - `DATABASE_USER` = Administrative user eg root with CREATEDB privileges.
 - `DATABASE_PASS` = Password of administrative user.
 
-Some subcommands require additional environment parameters.
+Some subcommands require additional environment parameters. See the
+documentation for the subcommand for more information.
 
 ## Status
 

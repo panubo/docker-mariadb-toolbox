@@ -4,12 +4,23 @@ HOST=${DATABASE_HOST-${MARIADB_PORT_3306_TCP_ADDR-localhost}}
 PORT=${DATABASE_PORT-${MARIADB_PORT_3306_TCP_PORT-3306}}
 USER=${DATABASE_USER-root}
 PASS=${DATABASE_PASS-${MARIADB_ENV_MYSQL_ROOT_PASSWORD}}
+# This could be made db specific by using --defaults-file=
 MYCONN="--user=${USER} --password=${PASS} --host=${HOST} --port=${PORT}"
 MYSQL="mysql ${MYCONN}"
 MYSQLDUMP="mysqldump $MYCONN"
 MYCHECK="mysqlcheck ${MYCONN}"
 GZIP="gzip --fast"
 
+# this function is not actually called anywhere
+function create_my_cnf {
+    (
+        echo "[client]"
+        echo "password=$PASS"
+        echo "user=$USER"
+        echo "host=$HOST"
+        echo "port=$PORT"
+    ) > ~/.my.cnf && chmod 600 ~/.my.cnf
+}
 
 function wait_mariadb {
     # Wait for MariaDB to be available

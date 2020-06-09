@@ -12,11 +12,11 @@ cat << EOF
 
      check <databases>
 
+     convert-to-innodb <databases>
+
      copy-database <source> <destination>
 
      create-user <username> <password>
-
-     convert-to-innodb <databases>
 
      import - import dumps
 
