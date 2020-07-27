@@ -12,7 +12,7 @@ MYCHECK="mysqlcheck ${MYCONN}"
 GZIP="gzip --fast"
 
 # this function is not actually called anywhere
-function create_my_cnf {
+create_my_cnf() {
     (
         echo "[client]"
         echo "password=$PASS"
@@ -22,7 +22,7 @@ function create_my_cnf {
     ) > ~/.my.cnf && chmod 600 ~/.my.cnf
 }
 
-function wait_mariadb {
+wait_mariadb() {
     # Wait for MariaDB to be available
     TIMEOUT=${3:-30}
     echo -n "Waiting to connect to MariaDB at ${1-$HOST}:${2-$PORT}"
@@ -40,11 +40,16 @@ function wait_mariadb {
     exec 3<&-
 }
 
-function genpasswd() {
-    export LC_CTYPE=C  # Quiet tr warnings
-    local l=$1
-    [ "$l" == "" ] && l=16
-    set +o pipefail
-    strings < /dev/urandom | tr -dc A-Za-z0-9_ | head -c ${l}
-    set -o pipefail
+genpasswd() {
+  # Ambiguous characters have been been excluded
+  CHARS="abcdefghijkmnpqrstuvwxyz23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+
+  export LC_CTYPE=C  # Quiet tr warnings
+  local length
+  length="${1:-16}"
+  set +o pipefail
+  strings < /dev/urandom | tr -dc "${CHARS}" | head -c "${length}" | xargs
+  set -o pipefail
 }
+
+echoerr() { echo "$@" 1>&2; }

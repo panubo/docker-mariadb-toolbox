@@ -1,0 +1,319 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC2034 shell=bash
+
+set -eo pipefail
+IFS=$'\n\t'
+
+[[ "${DEBUG:-}" == 'true' ]] && set -x
+
+# shellcheck disable=SC1090
+. "$(dirname "${0}")/common.sh"
+
+# This should be at the top but common.sh throws an error when used
+set -u
+
+# Options:
+# compression gzip|lz4|bz2|zip|none
+# dateformat %Y%m%d%H%M%S
+# checksum sha256
+# umask 0077
+# dest gs://|s3://|file://
+# databases ALL
+
+parse_options() {
+
+    # For reference these are the relevant parameters that mysql command accepts
+    #   -h, --host=name     Connect to host.
+    #   -p, --password[=name] 
+    #   -P, --port=#        Port number to use for connection or 0 for default to, in
+    #   -u, --user=name     User for login if not current user.
+    #   -D, --database=name Database to use.
+
+    # We don't want to pass these back to the caller
+    local password
+    local password_file
+
+    # Pull in environment variables prefixed with DATABASE_
+    for item in host port user database password password_file; do
+        local varname
+        varname="DATABASE_${item^^}"
+        if [[ -n "${!varname:-}" ]]; then
+          eval ${item}="${!varname}"
+        fi
+    done
+
+    # Pull in environment variables prefixed with SAVE_
+    # SAVE_SKIP_DATABASES should be comma separated
+    for item in compression skip_databases; do
+        local varname
+        varname="SAVE_${item^^}"
+        if [[ -n "${!varname:-}" ]]; then
+          eval ${item}="${!varname}"
+        fi
+    done
+
+    # If skip_databases was set via env var, split into an array
+    if [[ -n "${skip_databases:-}" ]]; then
+        IFS=',' read -r -a skip_databases <<< "${skip_databases}"
+    fi
+
+    # Options and long options
+    local options="h:P:u:D:p:"
+    local longopts="host:,port:,user:,database:,password:,password-file:,compression:,skip-database:,umark:"
+    local parsed
+
+    # Parse with getopt (not getopts)
+    ! parsed=$(getopt --quiet --options=${options} --longoptions=${longopts} --name "${0}" -- "${@}")
+    eval set -- "${parsed}"
+    while true; do
+      case "${1}" in
+        -h|--host)
+          host="${2}"
+          shift 2
+          ;;
+        -P|--port)
+          port="${2}"
+          shift 2
+          ;;
+        -u|--user)
+          user="${2}"
+          shift 2
+          ;;
+        -D|--database)
+          database="${2}"
+          shift 2
+          ;;
+        -p|--password)
+          password="${2}"
+          shift 2
+          ;;
+        --password-file)
+          password_file="${2}"
+          shift 2
+          ;;
+        --skip-database)
+          skip_databases+=( "${2}" )
+          shift 2
+          ;;
+        --compression)
+          compression="${2}"
+          shift 2
+          ;;
+        --umark)
+          umark="${2}"
+          shift 2
+          ;;
+        --)
+          shift
+          break
+          ;;
+        *)
+          echo "Unrecognised option"
+          exit 3
+          ;;
+      esac
+    done
+
+    # Set remaining command line arguments into an array
+    args=( "${@}" )
+
+    # Read in the password file if set
+    if [[ -n "${password_file:-}" ]]; then
+        # Read password file if set on the command line or DATABASE_PASSWORD_FILE
+        password="$(cat "${password_file}")"
+    fi
+ 
+    # If the password was set write it to .my.cnf (or save a temporary file and set --defaults-extra-file)
+    # Note: --defaults-extra-file must be specified first on the mysql command line
+    # TODO: add trap to clean up the temp file
+    if [[ -n "${password:-}" ]]; then
+        local old_umask
+        old_umask="$(umask)"
+        umask 0077
+        defaults_extra_file="$(mktemp)"
+        printf "%s\n" \
+          "[client]" \
+          "password=${password}" > "${defaults_extra_file}"
+        umask "${old_umask}"
+        echoerr ">>> Password written to ${defaults_extra_file}"
+    fi
+
+    # Setup connection string
+    connection=()
+    for item in defaults_extra_file host port user database ; do
+        if [[ -n "${!item:-}" ]]; then
+          connection+=("--${item//_/-}=${!item}")
+        fi
+    done
+}
+
+parse_options "${@}"
+
+# TODO: add `--save-local DIR` to specify a local directory to keep a local copy as well as uploading to the DEST (don't delete local after upload)
+usage() {
+    echoerr "Usage: ${0} [GLOBAL_OPTIONS] [OPTIONS] [DATABASE...] DESTINATION"
+    echoerr "Global Options: (where possible these options match mysql options)"
+    echoerr "    -h|--host    host to connect to"
+    echoerr "    -P|--port    post to connect to"
+    echoerr "    -u|--user    user to connect with"
+    echoerr "    -D|--database    database to connect to"
+    echoerr "    -p|--password    password to connection to (not recommended. Use password-file)"
+    echoerr "    --password-file    password file to read password from"
+    echoerr ""
+    echoerr "Options:"
+    echoerr "    --compression    gzip|lz4|bz2|none"
+    echoerr "    --date-format    %Y%m%d%H%M%S"
+    echoerr "    --checksum    sha256"
+    echoerr "    --umask    0077"
+    echoerr ""
+    echoerr "    DATABASE    database(s) to dump. Will dump all if no databases are specified."
+    echoerr "    DESTINATION    Destination to save database dumps to. s3://, gs:// and files are supported."
+    echoerr ""
+    echoerr "Environment variables:"
+    echoerr "    Any global options can be prefixed with DATABASE_ and specified via environment variable."
+    echoerr "    Any save command options can be prefixed with SAVE_ and specified via environment variable."
+}
+
+# Pick up the destination parameter, should always be the last parameter based on standard SRC DEST parameter order
+# TODO: this seems to blow up if args is empty
+if [[ -z "${args[-1]:-}" ]]; then
+    echoerr "Destination is not specified."
+    usage
+    exit 1
+fi
+dest="${args[-1]}"
+unset "args[-1]"
+
+# Set the umask, umask defaults to 0077 to keep files private during db dumping 
+umask "${umask:-0077}"
+
+date="$(date --utc "+${date_format:-%Y%m%d%H%M%S}")"
+
+case "${dest}" in
+    gs://*)
+        echo ">> gsutil"
+        save_cmd=( "gsutil" "rsync" )
+        dest_type="gs"
+        ;;
+    s3://*)
+        echo ">> aws s3"
+        save_cmd=( "aws" "s3" "sync" "--no-progress" )
+        dest_type="s3"
+        ;;
+    file://*|/*|./*)
+        echo ">> file"
+        save_cmd=( "ls" )
+        dest="${dest#file:\/\/}"
+        dest_type="file"
+        ;;
+    *)
+        echoerr "Unknown destination protocol"
+        exit 1
+        ;;
+    esac
+
+cmd_args=()
+file_ext=()
+file_path=( "${dest}" "${date}" )
+
+# TODO: add support to define mysqldump options
+cmd_args+=( "--hex-blob" "--single-transaction" "--default-character-set=utf8mb4" ) # "--set-gtid-purged=OFF" isn't support by mariadb
+
+# TODO: extra options for each of the object storage tools, eg server side encryption settings etc
+# TODO: implement checksum option (currently locked to sha256)
+
+# Output format and extension
+file_ext+=( ".sql" )
+
+# Output compression
+case "${compression:-gzip}" in
+    "gzip")
+        file_ext+=( ".gz" )
+        compression_cmd=( "gzip" "--fast" )
+        ;;
+    "lz4")
+        file_ext+=( ".lz4" )
+        compression_cmd=( "lz4" "-c" )
+        ;;
+    "bz2"|"bzip2")
+        file_ext+=( ".bz2" )
+        compression_cmd=( "bzip2" "-c" )
+        ;;
+    "zip")
+        echoerr "ZIP not implement"
+        exit 1
+        ;;
+    "none")
+        compression_cmd=( "cat" )
+        ;;
+    *)
+        echoerr "Unknown compressions method"
+        exit 1
+        ;;
+    esac
+
+# Create a temporary save path
+# mkdir uses TMPDIR, if unset set to /var/tmp since /tmp is normally in memory and could be too small for a big database
+TMPDIR="${TMPDIR:-/var/tmp}"
+save_path="$(mktemp -d)/"
+
+# Setup the final path to pass to the save cmd
+full_path="$(printf "%s/" "${file_path[@]}")"
+
+# If file destination create the directories and reset the temporary save path to the final save path
+if [[ "${dest_type}" == "file" ]]; then
+    mkdir -p "${full_path}"
+    # Reset the save path if file destination
+    save_path="${full_path}/"
+fi
+
+# TODO: remove any double / from the full_path EXCEPT the double slash in the protocol
+# full_path="${full_path//\/\//\/}"
+
+# Put the file extensions together, dump type and compression type
+final_ext="$(printf "%s" "${file_ext[@]}")"
+
+wait_mariadb "${host}" "${port:-3306}"
+
+# Saving a list of all databases as an array
+echo "${skip_databases[@]}"
+skip_dbs="$(printf "|%s" "${skip_databases[@]}")"
+mapfile -t all_databases < <( /usr/bin/mysql "${connection[@]}" -rs -e "SHOW DATABASES" | grep -v -E "^(information_schema|performance_schema${skip_dbs})$" )
+
+echo "All databases:"
+echo "${all_databases[*]}"
+
+if [[ "${#args[@]}" -gt 0 ]]; then
+    databases=( "${args[@]}" )
+else
+    databases=( "${all_databases[@]}" )
+fi
+# TODO: check databases specified on command line exist in database
+
+echo "Databases to dump: ${#databases[@]}"
+echo "${databases[*]}"
+
+if [[ "${#databases[@]}" -lt 1 ]]; then
+  echo ">> ERROR: no databases to dump but we expected some"
+  exit 1
+fi
+
+# loop over and save the databases
+for database in "${databases[@]}"; do
+  save_dest="${save_path}${database}${final_ext}"
+  echo ">> Saving ${database} to ${save_dest}"
+  /usr/bin/mysqldump "${connection[@]}" "${cmd_args[@]}" "${database}" | "${compression_cmd[@]}" | tee >(sha256sum > /tmp/sha.txt) > "${save_dest}"
+  awk "{print \$1 \"  ${database}${final_ext}\"}" < /tmp/sha.txt | tee -a "${save_path}/CHECKSUM"
+done
+
+# Do the upload
+# TODO: can we keep the local copy too?
+if [[ "${dest_type}" == "file" ]]; then
+    ls -l "${full_path}"
+else
+    echo ">> Uploading to ${full_path}"
+    "${save_cmd[@]}" "${save_path}" "${full_path}"
+
+    # Clean up the save path if successful and not a file type save
+    rm -rf "${save_path}"
+fi
