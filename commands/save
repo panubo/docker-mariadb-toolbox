@@ -20,6 +20,24 @@ set -u
 # dest gs://|s3://|file://
 # databases ALL
 
+gsutil_auth() {
+  if [[ -n "${SKIP_GSUIT_AUTH:-}" ]]; then
+    return
+  elif [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
+    # if GOOGLE_APPLICATION_CREDENTIALS is set with a service account key
+    printf "%s\n" \
+      "[Credentials]" \
+      "gs_service_key_file = ${GOOGLE_APPLICATION_CREDENTIALS}" > /etc/boto.cfg
+  elif curl --max-time 2 -sSf 'http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/' -H "Metadata-Flavor: Google"; then
+    # if GCE metadata is set and a default service-account is present
+    printf "%s\n" \
+      "[Credentials]" \
+      "service_account = default" > /etc/boto.cfg
+  fi
+}
+
+gsutil_auth
+
 parse_options() {
 
     # For reference these are the relevant parameters that mysql command accepts
