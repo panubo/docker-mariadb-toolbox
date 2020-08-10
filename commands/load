@@ -161,13 +161,20 @@ parse_options() {
           connection+=("--${item//_/-}=${!item}")
         fi
     done
+
+    connection_no_db=()
+    for item in defaults_extra_file host port user ; do
+        if [[ -n "${!item:-}" ]]; then
+          connection_no_db+=("--${item//_/-}=${!item}")
+        fi
+    done
 }
 
 parse_options "${@}"
 
 # TODO: add `--save-local DIR` to specify a local directory to keep a local copy as well as uploading to the DEST (don't delete local after upload)
 usage() {
-    echoerr "Usage: ${0} [GLOBAL_OPTIONS] [OPTIONS] [DATABASE...] DESTINATION"
+    echoerr "Usage: ${0} [GLOBAL_OPTIONS] [OPTIONS] SOURCE DATABASE [NEW_DATABASE]"
     echoerr "Global Options: (where possible these options match mysql options)"
     echoerr "    -h|--host    host to connect to"
     echoerr "    -P|--port    post to connect to"
@@ -177,51 +184,70 @@ usage() {
     echoerr "    --password-file    password file to read password from"
     echoerr ""
     echoerr "Options:"
-    echoerr "    --compression    gzip|lz4|bz2|none"
+    echoerr "    --compression    auto|gzip|lz4|bz2|none"
     echoerr "    --date-format    %Y%m%d%H%M%S"
     echoerr "    --checksum    sha256"
     echoerr "    --umask    0077"
     echoerr ""
-    echoerr "    DATABASE    database(s) to dump. Will dump all if no databases are specified."
-    echoerr "    DESTINATION    Destination to save database dumps to. s3://, gs:// and files are supported."
+    echoerr "    SOURCE    Source to load database dumps from. s3://, gs:// and files are supported."
+    echoerr "    DATABASE    database to load to."
+    echoerr "    NEW_DATABASE    database to load to."
     echoerr ""
     echoerr "Environment variables:"
     echoerr "    Any global options can be prefixed with DATABASE_ and specified via environment variable."
     echoerr "    Any save command options can be prefixed with SAVE_ and specified via environment variable."
 }
 
-# Pick up the destination parameter, should always be the last parameter based on standard SRC DEST parameter order
-# TODO: this seems to blow up if args is empty
-if [[ -z "${args[-1]:-}" ]]; then
-    echoerr "Destination is not specified."
-    usage
+case "${#args[@]}" in
+  0|1)
+    echo "error: ${#args[@]} ARGS"
     exit 1
-fi
-dest="${args[-1]}"
-unset "args[-1]"
+    ;;
+  2)
+    source="${args[0]}"
+    src_database="${args[1]}"
+    dest_database="${args[1]}"
+    ;;
+  3)
+    source="${args[0]}"
+    src_database="${args[1]}"
+    dest_database="${args[2]}"
+    ;;
+  *)
+    echo "Unknown"
+    exit 1
+    ;;
+  esac
+
+echo "Source:  ${source}"
+echo "SRC DB:  ${src_database}"
+echo "DEST DB: ${dest_database}"
 
 # Set the umask, umask defaults to 0077 to keep files private during db dumping 
 umask "${umask:-0077}"
 
 date="$(date --utc "+${date_format:-%Y%m%d%H%M%S}")"
 
-case "${dest}" in
+case "${source}" in
     gs://*)
         echo ">> gsutil"
-        save_cmd=( "gsutil" "rsync" )
-        dest_type="gs"
+        ls_cmd=( "gsutil" "ls" )
+        fetch_cmd=( "gsutil" "cp" )
+        src_type="gs"
         gsutil_auth
         ;;
     s3://*)
         echo ">> aws s3"
-        save_cmd=( "aws" "s3" "sync" "--no-progress" )
-        dest_type="s3"
+        ls_cmd=( "aws" "s3" "ls" )
+        fetch_cmd=( "aws" "s3" "cp" )
+        src_type="s3"
         ;;
     file://*|/*|./*)
         echo ">> file"
-        save_cmd=( "ls" )
-        dest="${dest#file:\/\/}"
-        dest_type="file"
+        ls_cmd=( "ls" )
+        fetch_cmd=( "cat" )
+        source="${source#file:\/\/}"
+        src_type="file"
         ;;
     *)
         echoerr "Unknown destination protocol"
@@ -229,32 +255,54 @@ case "${dest}" in
         ;;
     esac
 
-cmd_args=()
-file_ext=()
-file_path=( "${dest}" "${date}" )
+# FIND
+latest="$("${ls_cmd[@]}" "${source}" | sed -E -e '/[0-9]{14}/!d' -e 's/.*([0-9]{14})\/$/\1/' | sort | tail -n1)"
+echo "Latest: ${latest}"
 
-# TODO: add support to define mysqldump options
-cmd_args+=( "--hex-blob" "--single-transaction" "--default-character-set=utf8mb4" ) # "--set-gtid-purged=OFF" isn't support by mariadb
+file="$("${ls_cmd[@]}" "${source}/${latest}" | sed -E -e 's/.*[\/ ]([^\/]*)$/\1/' | grep "^${src_database}[\.\-]" || true)"
+if [[ -z "${file}" ]]; then
+  echo "No import found"
+  exit 1
+fi
+echo "File: ${file}"
 
-# TODO: extra options for each of the object storage tools, eg server side encryption settings etc
-# TODO: implement checksum option (currently locked to sha256)
-
-# Output format and extension
-file_ext+=( ".sql" )
+if [[ "${compression:-auto}" == "auto" ]]; then
+  case "${file##*.}" in
+    "lz4")
+      compression="lz4"
+      ;;
+    "gz")
+      compression="gzip"
+      ;;
+    "bz2")
+      compression="bz2"
+      ;;
+    "zip")
+      compression="zip"
+      ;;
+    "sql"|"dump"|"pgdump"|"pg_dump")
+      compression="none"
+      ;;
+    *)
+      echo "Unknown file expression, please define compression used or compression=none"
+      exit 1
+      ;;
+    esac
+fi
 
 # Output compression
-case "${compression:-gzip}" in
+case "${compression}" in
     "gzip")
         file_ext+=( ".gz" )
-        compression_cmd=( "gzip" "--fast" )
+        compression_cmd=( "gzip" "--fast" "-d" )
         ;;
     "lz4")
         file_ext+=( ".lz4" )
-        compression_cmd=( "lz4" "-c" )
+        compression_cmd=( "lz4" "-c" "-d" )
         ;;
     "bz2"|"bzip2")
         file_ext+=( ".bz2" )
-        compression_cmd=( "bzip2" "-c" )
+        compression_cmd=( "bzip2" "-c" "-d" )
         ;;
     "zip")
         echoerr "ZIP not implement"
@@ -269,68 +317,10 @@ case "${compression:-gzip}" in
         ;;
     esac
 
-# Create a temporary save path
-# mkdir uses TMPDIR, if unset set to /var/tmp since /tmp is normally in memory and could be too small for a big database
-TMPDIR="${TMPDIR:-/var/tmp}"
-save_path="$(mktemp -d)/"
-
-# Setup the final path to pass to the save cmd
-full_path="$(printf "%s/" "${file_path[@]}")"
-
-# If file destination create the directories and reset the temporary save path to the final save path
-if [[ "${dest_type}" == "file" ]]; then
-    mkdir -p "${full_path}"
-    # Reset the save path if file destination
-    save_path="${full_path}/"
-fi
-
-# TODO: remove any double / from the full_path EXCEPT the double slash in the protocol
-# full_path="${full_path//\/\//\/}"
-
-# Put the file extensions together, dump type and compression type
-final_ext="$(printf "%s" "${file_ext[@]}")"
-
 wait_mariadb "${host}" "${port:-3306}"
 
-# Saving a list of all databases as an array
-echo "${skip_databases[@]}"
-skip_dbs="$(printf "|%s" "${skip_databases[@]}")"
-mapfile -t all_databases < <( /usr/bin/mysql "${connection[@]}" -rs -e "SHOW DATABASES" | grep -v -E "^(information_schema|performance_schema${skip_dbs})$" )
+set -x
 
-echo "All databases:"
-echo "${all_databases[*]}"
+/usr/bin/mysql "${connection[@]}" -rs -e "DROP DATABASE IF EXISTS ${dest_database}; CREATE DATABASE ${dest_database}"
 
-if [[ "${#args[@]}" -gt 0 ]]; then
-    databases=( "${args[@]}" )
-else
-    databases=( "${all_databases[@]}" )
-fi
-# TODO: check databases specified on command line exist in database
-
-echo "Databases to dump: ${#databases[@]}"
-echo "${databases[*]}"
-
-if [[ "${#databases[@]}" -lt 1 ]]; then
-  echo ">> ERROR: no databases to dump but we expected some"
-  exit 1
-fi
-
-# loop over and save the databases
-for database in "${databases[@]}"; do
-  save_dest="${save_path}${database}${final_ext}"
-  echo ">> Saving ${database} to ${save_dest}"
-  /usr/bin/mysqldump "${connection[@]}" "${cmd_args[@]}" "${database}" | "${compression_cmd[@]}" | tee >(sha256sum > /tmp/sha.txt) > "${save_dest}"
-  awk "{print \$1 \"  ${database}${final_ext}\"}" < /tmp/sha.txt | tee -a "${save_path}/CHECKSUM"
-done
-
-# Do the upload
-# TODO: can we keep the local copy too?
-if [[ "${dest_type}" == "file" ]]; then
-    ls -l "${full_path}"
-else
-    echo ">> Uploading to ${full_path}"
-    "${save_cmd[@]}" "${save_path}" "${full_path}"
-
-    # Clean up the save path if successful and not a file type save
-    rm -rf "${save_path}"
-fi
+"${fetch_cmd[@]}" "${source}/${latest}/${file}" "-" | "${compression_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
