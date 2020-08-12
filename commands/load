@@ -58,11 +58,11 @@ parse_options() {
         fi
     done
 
-    # Pull in environment variables prefixed with SAVE_
-    # SAVE_SKIP_DATABASES should be comma separated
+    # Pull in environment variables prefixed with LOAD_
+    # LOAD_SKIP_DATABASES should be comma separated
     for item in compression skip_databases; do
         local varname
-        varname="SAVE_${item^^}"
+        varname="LOAD_${item^^}"
         if [[ -n "${!varname:-}" ]]; then
           eval ${item}="${!varname}"
         fi
@@ -195,7 +195,7 @@ usage() {
     echoerr ""
     echoerr "Environment variables:"
     echoerr "    Any global options can be prefixed with DATABASE_ and specified via environment variable."
-    echoerr "    Any save command options can be prefixed with SAVE_ and specified via environment variable."
+    echoerr "    Any save command options can be prefixed with LOAD_ and specified via environment variable."
 }
 
 case "${#args[@]}" in
@@ -259,7 +259,7 @@ case "${source}" in
 latest="$("${ls_cmd[@]}" "${source}" | sed -E -e '/[0-9]{14}/!d' -e 's/.*([0-9]{14})\/$/\1/' | sort | tail -n1)"
 echo "Latest: ${latest}"
 
-file="$("${ls_cmd[@]}" "${source}/${latest}" | sed -E -e 's/.*[\/ ]([^\/]*)$/\1/' | grep "^${src_database}[\.\-]" || true)"
+file="$("${ls_cmd[@]}" "${source}/${latest}/" | sed -E -e 's/.*[\/ ]([^\/]*)$/\1/' | grep "^${src_database}[\.\-]" || true)"
 if [[ -z "${file}" ]]; then
   echo "No import found"
   exit 1
