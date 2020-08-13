@@ -75,7 +75,7 @@ parse_options() {
 
     # Options and long options
     local options="h:P:u:D:p:"
-    local longopts="host:,port:,user:,database:,password:,password-file:,compression:,skip-database:,umark:"
+    local longopts="host:,port:,user:,database:,password:,password-file:,compression:,skip-database:,umark:,sed:"
     local parsed
 
     # Parse with getopt (not getopts)
@@ -117,6 +117,10 @@ parse_options() {
           ;;
         --umark)
           umark="${2}"
+          shift 2
+          ;;
+        --sed)
+          sed+=( "${2}" )
           shift 2
           ;;
         --)
@@ -188,6 +192,7 @@ usage() {
     echoerr "    --date-format    %Y%m%d%H%M%S"
     echoerr "    --checksum    sha256"
     echoerr "    --umask    0077"
+    echoerr "    --sed"
     echoerr ""
     echoerr "    SOURCE    Source to load database dumps from. s3://, gs:// and files are supported."
     echoerr "    DATABASE    database to load to."
@@ -317,10 +322,20 @@ case "${compression}" in
         ;;
     esac
 
+# Process sed filters
+sed_cmd=()
+for item in "${sed[@]}"; do
+  sed_cmd+=( "-e" "${item}" )
+done
+
 wait_mariadb "${host}" "${port:-3306}"
 
 set -x
 
 /usr/bin/mysql "${connection[@]}" -rs -e "DROP DATABASE IF EXISTS ${dest_database}; CREATE DATABASE ${dest_database}"
 
-"${fetch_cmd[@]}" "${source}/${latest}/${file}" "-" | "${compression_cmd[@]}" | sed -E -e '/DEFINER=.*SQL SECURITY DEFINER/d' | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
+if [[ "${#sed_cmd[@]}" -gt 0 ]]; then
+  "${fetch_cmd[@]}" "${source}/${latest}/${file}" "-" | "${compression_cmd[@]}" | sed -E "${sed_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
+else
+  "${fetch_cmd[@]}" "${source}/${latest}/${file}" "-" | "${compression_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
+fi
