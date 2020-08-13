@@ -323,4 +323,4 @@ set -x
 
 /usr/bin/mysql "${connection[@]}" -rs -e "DROP DATABASE IF EXISTS ${dest_database}; CREATE DATABASE ${dest_database}"
 
-"${fetch_cmd[@]}" "${source}/${latest}/${file}" "-" | "${compression_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
+"${fetch_cmd[@]}" "${source}/${latest}/${file}" "-" | "${compression_cmd[@]}" | sed -E -e '/DEFINER=.*SQL SECURITY DEFINER/d' | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
