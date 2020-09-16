@@ -1,5 +1,5 @@
-NAME = mariadb-toolbox
-TAG = `git describe --long --tags --dirty --always`
+NAME       := mariadb-toolbox
+TAG        := `git describe --long --tags --dirty --always`
 IMAGE_NAME := panubo/$(NAME)
 
 .PHONY: help build test clean push
