@@ -25,13 +25,13 @@ Documentation for each subcommand:
 Using Docker links to `mariadb` container:
 
 ```
-docker run --rm -i -t --link myserver:mariadb docker.io/panubo/mariadb-toolbox:1.1.1
+docker run --rm -i -t --link myserver:mariadb docker.io/panubo/mariadb-toolbox:1.5.0
 ```
 
 This will display the usage information.
 
 ```
-docker run --rm -i -t --link myserver:mariadb docker.io/panubo/mariadb-toolbox:1.1.1 <subcommand>
+docker run --rm -i -t --link myserver:mariadb docker.io/panubo/mariadb-toolbox:1.5.0 <subcommand>
 ```
 
 To run the subcommand.
