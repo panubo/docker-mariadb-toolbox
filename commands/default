@@ -20,6 +20,10 @@ cat << EOF
 
      import - import dumps
 
+     load - load database
+
      mysql - start a MySQL client session
+
+     save -save databases
 
 EOF
