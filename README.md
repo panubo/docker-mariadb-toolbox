@@ -4,7 +4,7 @@
 
 A collection of MySQL / MariaDB scripts for automating common DBA tasks in a Docker-centric way.
 
-Wherever possible the commands are compatible with Amazon RDS.
+Wherever possible the commands are compatible with Amazon RDS and GCP Cloud SQL.
 
 ## Documentation
 
