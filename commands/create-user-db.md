@@ -24,11 +24,11 @@ Or alternatively specify the individual variables:
 Create `foo` user with full privileges to a database with the same name:
 
 ```
-docker run --rm -i -t -e DATABASE_HOST=172.19.66.4 -e DATABASE_USER=root -e DATABASE_PASS=foo docker.io/panubo/mariadb-toolbox:1.5.0 create-user foo foopass
+docker run --rm -i -t -e DATABASE_HOST=172.19.66.4 -e DATABASE_USER=root -e DATABASE_PASS=foo docker.io/panubo/mariadb-toolbox:1.5.0 create-user-db foo foopass
 ```
 
 Using Docker links to `mariadb` container:
 
 ```
-docker run --rm -i -t --link myserver:mariadb docker.io/panubo/mariadb-toolbox:1.5.0 create-user foo foopass
+docker run --rm -i -t --link myserver:mariadb docker.io/panubo/mariadb-toolbox:1.5.0 create-user-db foo foopass
 ```

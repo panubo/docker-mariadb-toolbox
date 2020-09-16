@@ -16,7 +16,7 @@ cat << EOF
 
      copy-database <source> <destination>
 
-     create-user <username> <password>
+     create-user-db <username> <password>
 
      import - import dumps
 
