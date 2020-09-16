@@ -38,13 +38,21 @@ docker run -t -i --name $TEST_NAME --link mariadb -e BACKUP_DIR=/backup $TEST_CO
 cleanup mariadb $TEST_NAME
 
 echo "=> Test import command"
-echo "TODO"
+mkdir -p /tmp/data
+(
+echo "CREATE TABLE testtable (a INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (a)) ENGINE=MyISAM;"
+) | gzip > /tmp/data/foodb.sql.gz
+docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password mariadb:latest > /dev/null
+docker run -t -i --name $TEST_NAME --link mariadb -e DATA_SRC=/data -v /tmp/data:/data $TEST_CONTAINER import
+cleanup mariadb $TEST_NAME
 
 echo "=> Test load command"
 echo "TODO"
 
 echo "=> Test mysql command"
-echo "TODO"
+docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password mariadb:latest > /dev/null
+echo "SHOW DATABASES;" | docker run -i --name $TEST_NAME --link mariadb $TEST_CONTAINER mysql
+cleanup mariadb $TEST_NAME
 
 echo "=> Test save command"
 echo "TODO"
