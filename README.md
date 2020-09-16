@@ -10,15 +10,15 @@ Wherever possible the commands are compatible with Amazon RDS.
 
 Documentation for each subcommand:
 
-- [Backup](commands/backup.md)
-- [Check](commands/check.md)
-- [Copy Database](commands/copy-database.md)
-- [Convert to InnoDB](commands/convert-to-innodb.md)
-- [Create User](commands/create-user.md)
-- [Import](commands/import.md)
-- [Load](commands/load.md)
-- [MySQL](commands/mysql.md)
-- [Save](commands/save.md)
+- [backup](commands/backup.md)
+- [check](commands/check.md)
+- [copy-database](commands/copy-database.md)
+- [convert-to-innodb](commands/convert-to-innodb.md)
+- [create-user](commands/create-user.md)
+- [import](commands/import.md)
+- [load](commands/load.md)
+- [mysql](commands/mysql.md)
+- [save](commands/save.md)
 
 ## General Usage
 
