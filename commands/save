@@ -40,7 +40,7 @@ parse_options() {
 
     # For reference these are the relevant parameters that mysql command accepts
     #   -h, --host=name     Connect to host.
-    #   -p, --password[=name] 
+    #   -p, --password[=name]
     #   -P, --port=#        Port number to use for connection or 0 for default to, in
     #   -u, --user=name     User for login if not current user.
     #   -D, --database=name Database to use.
@@ -138,7 +138,7 @@ parse_options() {
         # Read password file if set on the command line or DATABASE_PASSWORD_FILE
         password="$(cat "${password_file}")"
     fi
- 
+
     # If the password was set write it to .my.cnf (or save a temporary file and set --defaults-extra-file)
     # Note: --defaults-extra-file must be specified first on the mysql command line
     # TODO: add trap to clean up the temp file
@@ -200,7 +200,7 @@ fi
 dest="${args[-1]}"
 unset "args[-1]"
 
-# Set the umask, umask defaults to 0077 to keep files private during db dumping 
+# Set the umask, umask defaults to 0077 to keep files private during db dumping
 umask "${umask:-0077}"
 
 date="$(date --utc "+${date_format:-%Y%m%d%H%M%S}")"
@@ -295,7 +295,7 @@ wait_mariadb "${host}" "${port:-3306}"
 # Saving a list of all databases as an array
 echo "${skip_databases[@]}"
 skip_dbs="$(printf "|%s" "${skip_databases[@]}")"
-mapfile -t all_databases < <( /usr/bin/mysql "${connection[@]}" -rs -e "SHOW DATABASES" | grep -v -E "^(information_schema|performance_schema${skip_dbs})$" )
+mapfile -t all_databases < <( /usr/bin/mysql "${connection[@]}" -rs -e "SHOW DATABASES" | grep -v -E "^(cloudsqladmin|information_schema|performance_schema${skip_dbs})$" )
 
 echo "All databases:"
 echo "${all_databases[*]}"
