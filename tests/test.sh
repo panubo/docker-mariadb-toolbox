@@ -23,11 +23,6 @@ docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password mariad
 docker run -t -i --name $TEST_NAME --link mariadb -e BACKUP_DIR=/backup -v /tmp/data:/data $TEST_CONTAINER copy-database mysql mysql-backup
 cleanup mariadb $TEST_NAME
 
-echo "=> Test create-user command"
-docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password mariadb:latest > /dev/null
-docker run -t -i --name $TEST_NAME --link mariadb -e BACKUP_DIR=/backup $TEST_CONTAINER create-user foo foopass
-cleanup mariadb $TEST_NAME
-
 echo "=> Test convert-to-innodb command"
 docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password mariadb:latest > /dev/null
 (
@@ -37,5 +32,19 @@ echo "USE foodb; CREATE TABLE testtable (a INT NOT NULL AUTO_INCREMENT, PRIMARY 
 docker run -t -i --name $TEST_NAME --link mariadb -e BACKUP_DIR=/backup $TEST_CONTAINER convert-to-innodb foodb
 cleanup mariadb $TEST_NAME
 
+echo "=> Test create-user-db command"
+docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password mariadb:latest > /dev/null
+docker run -t -i --name $TEST_NAME --link mariadb -e BACKUP_DIR=/backup $TEST_CONTAINER create-user-db foo foopass
+cleanup mariadb $TEST_NAME
+
 echo "=> Test import command"
+echo "TODO"
+
+echo "=> Test load command"
+echo "TODO"
+
+echo "=> Test mysql command"
+echo "TODO"
+
+echo "=> Test save command"
 echo "TODO"

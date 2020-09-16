@@ -14,7 +14,7 @@ Documentation for each subcommand:
 - [check](commands/check.md)
 - [copy-database](commands/copy-database.md)
 - [convert-to-innodb](commands/convert-to-innodb.md)
-- [create-user](commands/create-user.md)
+- [create-user-db](commands/create-user-db.md)
 - [import](commands/import.md)
 - [load](commands/load.md)
 - [mysql](commands/mysql.md)
