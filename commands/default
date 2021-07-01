@@ -24,6 +24,6 @@ cat << EOF
 
      mysql - start a MySQL client session
 
-     save -save databases
+     save - save databases
 
 EOF
