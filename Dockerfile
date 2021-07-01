@@ -1,4 +1,4 @@
-FROM alpine:3.12
+FROM alpine:3.14
 
 RUN set -x \
   && apk add --update bash findutils mariadb-client gzip bzip2 lz4 xz unzip zip coreutils python3 rsync curl \
