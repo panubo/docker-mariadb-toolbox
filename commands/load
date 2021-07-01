@@ -20,22 +20,6 @@ set -u
 # dest gs://|s3://|file://
 # databases ALL
 
-gsutil_auth() {
-  if [[ -n "${SKIP_GSUIT_AUTH:-}" ]]; then
-    return
-  elif [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
-    # if GOOGLE_APPLICATION_CREDENTIALS is set with a service account key
-    printf "%s\n" \
-      "[Credentials]" \
-      "gs_service_key_file = ${GOOGLE_APPLICATION_CREDENTIALS}" > /etc/boto.cfg
-  elif curl --max-time 2 -sSf 'http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/' -H "Metadata-Flavor: Google"; then
-    # if GCE metadata is set and a default service-account is present
-    printf "%s\n" \
-      "[Credentials]" \
-      "service_account = default" > /etc/boto.cfg
-  fi
-}
-
 parse_options() {
 
     # For reference these are the relevant parameters that mysql command accepts
@@ -205,7 +189,7 @@ usage() {
 
 case "${#args[@]}" in
   0|1)
-    echo "error: ${#args[@]} ARGS"
+    echo "error: Insufficient args: ${#args[@]} args passed"
     exit 1
     ;;
   2)
@@ -233,40 +217,15 @@ umask "${umask:-0077}"
 
 date="$(date --utc "+${date_format:-%Y%m%d%H%M%S}")"
 
-case "${source}" in
-    gs://*)
-        echo ">> gsutil"
-        ls_cmd=( "gsutil" "ls" )
-        fetch_cmd=( "gsutil" "cp" )
-        src_type="gs"
-        gsutil_auth
-        ;;
-    s3://*)
-        echo ">> aws s3"
-        ls_cmd=( "aws" "s3" "ls" )
-        fetch_cmd=( "aws" "s3" "cp" )
-        src_type="s3"
-        ;;
-    file://*|/*|./*)
-        echo ">> file"
-        ls_cmd=( "ls" )
-        fetch_cmd=( "cat" )
-        source="${source#file:\/\/}"
-        src_type="file"
-        ;;
-    *)
-        echoerr "Unknown destination protocol"
-        exit 1
-        ;;
-    esac
+get_storage_commands "${source}"
 
-# FIND
-latest="$("${ls_cmd[@]}" "${source}" | sed -E -e '/[0-9]{14}/!d' -e 's/.*([0-9]{14})\/$/\1/' | sort | tail -n1)"
+# Find latest
+latest="$(eval "${ls_cmd[@]}" "${source}" | sed -E -e '/[0-9]{14}/!d' -e 's/.*([0-9]{14})\/$/\1/' | sort | tail -n1)"
 echo "Latest: ${latest}"
 
-file="$("${ls_cmd[@]}" "${source}/${latest}/" | sed -E -e 's/.*[\/ ]([^\/]*)$/\1/' | grep "^${src_database}[\.\-]" || true)"
+file="$(eval "${ls_cmd[@]}" "${source}/${latest}/" | sed -E -e 's/.*[\/ ]([^\/]*)$/\1/' | grep "^${src_database}[\.\-]" || true)"
 if [[ -z "${file}" ]]; then
-  echo "No import found"
+  echo "No save found for database in ${latest}"
   exit 1
 fi
 echo "File: ${file}"
@@ -296,31 +255,7 @@ if [[ "${compression:-auto}" == "auto" ]]; then
 fi
 
 # Output compression
-case "${compression}" in
-    "gzip")
-        file_ext+=( ".gz" )
-        compression_cmd=( "gzip" "--fast" "-d" )
-        ;;
-    "lz4")
-        file_ext+=( ".lz4" )
-        compression_cmd=( "lz4" "-c" "-d" )
-        ;;
-    "bz2"|"bzip2")
-        file_ext+=( ".bz2" )
-        compression_cmd=( "bzip2" "-c" "-d" )
-        ;;
-    "zip")
-        echoerr "ZIP not implement"
-        exit 1
-        ;;
-    "none")
-        compression_cmd=( "cat" )
-        ;;
-    *)
-        echoerr "Unknown compressions method"
-        exit 1
-        ;;
-    esac
+get_compression_commands "${compression}"
 
 # Process sed filters
 sed_cmd=()
@@ -330,12 +265,12 @@ done
 
 wait_mariadb "${host}" "${port:-3306}"
 
-set -x
-
 /usr/bin/mysql "${connection[@]}" -rs -e "DROP DATABASE IF EXISTS ${dest_database}; CREATE DATABASE ${dest_database}"
 
 if [[ "${#sed_cmd[@]}" -gt 0 ]]; then
-  "${fetch_cmd[@]}" "${source}/${latest}/${file}" "-" | "${compression_cmd[@]}" | sed -E "${sed_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
+  eval "${fetch_cmd[@]}" "${source}/${latest}/${file}" "-" | "${decompression_cmd[@]}" | sed -E "${sed_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
 else
-  "${fetch_cmd[@]}" "${source}/${latest}/${file}" "-" | "${compression_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
+  eval "${fetch_cmd[@]}" "${source}/${latest}/${file}" "-" | "${decompression_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
 fi
+
+echo ">> Finished."

@@ -53,3 +53,85 @@ genpasswd() {
 }
 
 echoerr() { echo "$@" 1>&2; }
+
+get_storage_commands() {
+    case "${1}" in
+        gs://*)
+            echo ">> Storage type: gsutil"
+            save_cmd=( "gsutil" "rsync" )
+            ls_cmd=( "gsutil" "ls" )
+            fetch_cmd=( "gsutil" "cp" )
+            storage_type="gs"
+            gsutil_auth
+            ;;
+        s3://*)
+            echo ">> Storage type: aws s3"
+            # Workaround for no environment variable for --endpoint-url https://github.com/aws/aws-cli/issues/4454
+            AWS_S3_ADDITIONAL_ARGS=${AWS_S3_ADDITIONAL_ARGS-''}
+            save_cmd=( "aws" "s3" "sync" "--no-progress" "${AWS_S3_ADDITIONAL_ARGS}" )
+            ls_cmd=( "aws" "s3" "ls" "${AWS_S3_ADDITIONAL_ARGS}" )
+            fetch_cmd=( "aws" "s3" "cp" "${AWS_S3_ADDITIONAL_ARGS}" )
+            storage_type="s3"
+            ;;
+        file://*|/*|./*)
+            echo ">> Storage type: file"
+            save_cmd=( "ls" )
+            ls_cmd=( "ls" )
+            fetch_cmd=( "cat" )
+            source="${source#file:\/\/}"
+            storage_type="file"
+            ;;
+        *)
+            echoerr "Unknown storage type"
+            exit 1
+            ;;
+    esac
+}
+
+get_compression_commands() {
+  case "${1:-gzip}" in
+      "gzip")
+          file_ext+=( ".gz" )
+          compression_cmd=( "gzip" "--fast" )
+          decompression_cmd=( "gzip" "--fast" "-d" )
+          ;;
+      "lz4")
+          file_ext+=( ".lz4" )
+          compression_cmd=( "lz4" "-c" )
+          decompression_cmd=( "lz4" "-c" "-d" )
+          ;;
+      "bz2"|"bzip2")
+          file_ext+=( ".bz2" )
+          compression_cmd=( "bzip2" "-c" )
+          decompression_cmd=( "bzip2" "-c" "-d" )
+          ;;
+      "zip")
+          echoerr "ZIP not implemented"
+          exit 1
+          ;;
+      "none")
+          compression_cmd=( "cat" )
+          decompression_cmd=( "cat" )
+          ;;
+      *)
+          echoerr "Unknown compression method"
+          exit 1
+          ;;
+  esac
+}
+
+gsutil_auth() {
+  if [[ -n "${SKIP_GSUIT_AUTH:-}" ]]; then
+    return
+  elif [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
+    # if GOOGLE_APPLICATION_CREDENTIALS is set with a service account key
+    printf "%s\n" \
+      "[Credentials]" \
+      "gs_service_key_file = ${GOOGLE_APPLICATION_CREDENTIALS}" > /etc/boto.cfg
+  elif curl --max-time 2 -sSf 'http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/' -H "Metadata-Flavor: Google"; then
+    # if GCE metadata is set and a default service-account is present
+    printf "%s\n" \
+      "[Credentials]" \
+      "service_account = default" > /etc/boto.cfg
+  fi
+}

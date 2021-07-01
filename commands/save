@@ -20,22 +20,6 @@ set -u
 # dest gs://|s3://|file://
 # databases ALL
 
-gsutil_auth() {
-  if [[ -n "${SKIP_GSUIT_AUTH:-}" ]]; then
-    return
-  elif [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
-    # if GOOGLE_APPLICATION_CREDENTIALS is set with a service account key
-    printf "%s\n" \
-      "[Credentials]" \
-      "gs_service_key_file = ${GOOGLE_APPLICATION_CREDENTIALS}" > /etc/boto.cfg
-  elif curl --max-time 2 -sSf 'http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/' -H "Metadata-Flavor: Google"; then
-    # if GCE metadata is set and a default service-account is present
-    printf "%s\n" \
-      "[Credentials]" \
-      "service_account = default" > /etc/boto.cfg
-  fi
-}
-
 parse_options() {
 
     # For reference these are the relevant parameters that mysql command accepts
@@ -205,29 +189,7 @@ umask "${umask:-0077}"
 
 date="$(date --utc "+${date_format:-%Y%m%d%H%M%S}")"
 
-case "${dest}" in
-    gs://*)
-        echo ">> gsutil"
-        save_cmd=( "gsutil" "rsync" )
-        dest_type="gs"
-        gsutil_auth
-        ;;
-    s3://*)
-        echo ">> aws s3"
-        save_cmd=( "aws" "s3" "sync" "--no-progress" )
-        dest_type="s3"
-        ;;
-    file://*|/*|./*)
-        echo ">> file"
-        save_cmd=( "ls" )
-        dest="${dest#file:\/\/}"
-        dest_type="file"
-        ;;
-    *)
-        echoerr "Unknown destination protocol"
-        exit 1
-        ;;
-    esac
+get_storage_commands "${dest}"
 
 cmd_args=()
 file_ext=()
@@ -243,31 +205,7 @@ cmd_args+=( "--hex-blob" "--single-transaction" "--default-character-set=utf8mb4
 file_ext+=( ".sql" )
 
 # Output compression
-case "${compression:-gzip}" in
-    "gzip")
-        file_ext+=( ".gz" )
-        compression_cmd=( "gzip" "--fast" )
-        ;;
-    "lz4")
-        file_ext+=( ".lz4" )
-        compression_cmd=( "lz4" "-c" )
-        ;;
-    "bz2"|"bzip2")
-        file_ext+=( ".bz2" )
-        compression_cmd=( "bzip2" "-c" )
-        ;;
-    "zip")
-        echoerr "ZIP not implement"
-        exit 1
-        ;;
-    "none")
-        compression_cmd=( "cat" )
-        ;;
-    *)
-        echoerr "Unknown compressions method"
-        exit 1
-        ;;
-    esac
+get_compression_commands "${compression:-gzip}"
 
 # Create a temporary save path
 # mkdir uses TMPDIR, if unset set to /var/tmp since /tmp is normally in memory and could be too small for a big database
@@ -278,7 +216,7 @@ save_path="$(mktemp -d)/"
 full_path="$(printf "%s/" "${file_path[@]}")"
 
 # If file destination create the directories and reset the temporary save path to the final save path
-if [[ "${dest_type}" == "file" ]]; then
+if [[ "${storage_type}" == "file" ]]; then
     mkdir -p "${full_path}"
     # Reset the save path if file destination
     save_path="${full_path}/"
@@ -325,12 +263,14 @@ done
 
 # Do the upload
 # TODO: can we keep the local copy too?
-if [[ "${dest_type}" == "file" ]]; then
+if [[ "${storage_type}" == "file" ]]; then
     ls -l "${full_path}"
 else
     echo ">> Uploading to ${full_path}"
-    "${save_cmd[@]}" "${save_path}" "${full_path}"
+    eval "${save_cmd[@]}" "${save_path}" "${full_path}"
 
     # Clean up the save path if successful and not a file type save
     rm -rf "${save_path}"
 fi
+
+echo ">> Finished."

@@ -4,5 +4,7 @@ TEST_TAG='test'
 TEST_CONTAINER="${TEST_IMAGE}:${TEST_TAG}"
 MARIADB_IMAGE='mariadb'
 MARIADB_TAG='latest'
+MINIO_IMAGE='minio/minio'
+MINIO_TAG='latest'
 DIND_IMAGE='jpetazzo/dind'
 DIND_TAG='latest'
