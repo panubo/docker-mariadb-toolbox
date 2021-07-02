@@ -3,7 +3,7 @@ FROM alpine:3.14
 RUN set -x \
   && apk add --update bash findutils mariadb-client gzip bzip2 lz4 xz unzip zip coreutils python3 rsync curl \
   && ln -s /usr/bin/python3 /usr/bin/python \
-  &&  rm -rf /var/cache/apk/* \
+  && rm -rf /var/cache/apk/* \
   ;
 
 # Install Gcloud SDK (required for gsutil workload identity authentication)
