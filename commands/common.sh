@@ -41,15 +41,15 @@ wait_mariadb() {
 }
 
 genpasswd() {
-  # Ambiguous characters have been been excluded
-  CHARS="abcdefghijkmnpqrstuvwxyz23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+    # Ambiguous characters have been been excluded
+    CHARS="abcdefghijkmnpqrstuvwxyz23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
 
-  export LC_CTYPE=C  # Quiet tr warnings
-  local length
-  length="${1:-16}"
-  set +o pipefail
-  strings < /dev/urandom | tr -dc "${CHARS}" | head -c "${length}" | xargs
-  set -o pipefail
+    export LC_CTYPE=C  # Quiet tr warnings
+    local length
+    length="${1:-16}"
+    set +o pipefail
+    strings < /dev/urandom | tr -dc "${CHARS}" | head -c "${length}" | xargs
+    set -o pipefail
 }
 
 echoerr() { echo "$@" 1>&2; }
@@ -120,18 +120,19 @@ get_compression_commands() {
   esac
 }
 
+# this function is not actually called anywhere
 gsutil_auth() {
-  if [[ -n "${SKIP_GSUIT_AUTH:-}" ]]; then
-    return
-  elif [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
-    # if GOOGLE_APPLICATION_CREDENTIALS is set with a service account key
-    printf "%s\n" \
-      "[Credentials]" \
-      "gs_service_key_file = ${GOOGLE_APPLICATION_CREDENTIALS}" > /etc/boto.cfg
-  elif curl --max-time 2 -sSf 'http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/' -H "Metadata-Flavor: Google"; then
-    # if GCE metadata is set and a default service-account is present
-    printf "%s\n" \
-      "[Credentials]" \
-      "service_account = default" > /etc/boto.cfg
-  fi
+    if [[ -n "${SKIP_GSUIT_AUTH:-}" ]]; then
+        return
+    elif [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
+        # if GOOGLE_APPLICATION_CREDENTIALS is set with a service account key
+        printf "%s\n" \
+          "[Credentials]" \
+          "gs_service_key_file = ${GOOGLE_APPLICATION_CREDENTIALS}" > /etc/boto.cfg
+    elif curl --max-time 2 -sSf 'http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/' -H "Metadata-Flavor: Google"; then
+        # if GCE metadata is set and a default service-account is present
+        printf "%s\n" \
+          "[Credentials]" \
+          "service_account = default" > /etc/boto.cfg
+    fi
 }
