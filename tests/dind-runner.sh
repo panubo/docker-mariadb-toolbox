@@ -24,7 +24,7 @@ echo ">> Building"
 docker build -f $DOCKERFILE -t $TEST_CONTAINER .
 
 echo ">> Running"
-docker run --privileged -ti --rm $TEST_CONTAINER
+docker run --privileged -i --rm $TEST_CONTAINER
 
 echo ">> Removing"
 docker rmi $TEST_CONTAINER
