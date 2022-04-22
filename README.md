@@ -1,7 +1,5 @@
 # MariaDB Toolbox
 
-[![CircleCI](https://circleci.com/gh/panubo/docker-mariadb-toolbox.svg?style=svg)](https://circleci.com/gh/panubo/docker-mariadb-toolbox)
-
 A collection of MySQL / MariaDB scripts for automating common DBA tasks in a Docker-centric way.
 
 Wherever possible the commands are compatible with Amazon RDS and GCP Cloud SQL.
