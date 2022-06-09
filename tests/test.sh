@@ -37,6 +37,15 @@ docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password ${MARI
 docker run -i --name $TEST_NAME --link mariadb -e BACKUP_DIR=/backup $TEST_CONTAINER create-user-db foo foopass
 cleanup mariadb $TEST_NAME
 
+echo "=> Test create-user-db command (idempotency / password change)"
+docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password ${MARIADB_IMAGE}:${MARIADB_TAG} > /dev/null
+docker run -i --name $TEST_NAME --link mariadb $TEST_CONTAINER create-user-db foo origpass && cleanup $TEST_NAME
+# password should be changed
+docker run -i --name $TEST_NAME --link mariadb $TEST_CONTAINER create-user-db foo changedpass && cleanup $TEST_NAME
+echo "SHOW VARIABLES LIKE 'version';" | docker run -i --name $TEST_NAME --link mariadb -e DATABASE_USER=foo -e DATABASE_PASS=changedpass $TEST_CONTAINER mysql
+cleanup $TEST_NAME
+cleanup mariadb $TEST_NAME
+
 echo "=> Test import command"
 mkdir -p /tmp/data
 (
