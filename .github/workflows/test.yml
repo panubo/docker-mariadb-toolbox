@@ -14,4 +14,4 @@ jobs:
 
       - name: Tests
         run: |
-          make test
+          make test-local
