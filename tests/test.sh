@@ -28,9 +28,12 @@ docker run -i --name $TEST_NAME --link mariadb -e BACKUP_DIR=/backup $TEST_CONTA
 cleanup mariadb $TEST_NAME
 
 echo "=> Test copy-database command"
+mkdir -p ${TMPDIR:-/tmp}/data
 docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password ${MARIADB_IMAGE}:${MARIADB_TAG} > /dev/null
-docker run -i --name $TEST_NAME --link mariadb -e BACKUP_DIR=/backup -v /tmp/data:/data $TEST_CONTAINER copy-database mysql mysql-backup
+docker run -i --name $TEST_NAME --link mariadb -e BACKUP_DIR=/backup -v ${TMPDIR:-/tmp}/data:/data $TEST_CONTAINER copy-database mysql mysql-backup
 cleanup mariadb $TEST_NAME
+rm -f ${TMPDIR:-/tmp}/data/mysql.sql.gz
+rmdir ${TMPDIR:-/tmp}/data
 
 echo "=> Test create-user-db command"
 docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password ${MARIADB_IMAGE}:${MARIADB_TAG} > /dev/null
@@ -47,13 +50,15 @@ cleanup $TEST_NAME
 cleanup mariadb $TEST_NAME
 
 echo "=> Test import command"
-mkdir -p /tmp/data
+mkdir -p ${TMPDIR:-/tmp}/data
 (
 echo "CREATE TABLE testtable (a INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (a)) ENGINE=MyISAM;"
-) | gzip > /tmp/data/foodb.sql.gz
+) | gzip > ${TMPDIR:-/tmp}/data/foodb.sql
 docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password ${MARIADB_IMAGE}:${MARIADB_TAG} > /dev/null
-docker run -i --name $TEST_NAME --link mariadb -e DATA_SRC=/data -v /tmp/data:/data $TEST_CONTAINER import
+docker run -i --name $TEST_NAME --link mariadb -e DATA_SRC=/data -v ${TMPDIR:-/tmp}/data:/data $TEST_CONTAINER import
 cleanup mariadb $TEST_NAME
+rm -f ${TMPDIR:-/tmp}/data/foodb.sql.gz
+rmdir ${TMPDIR:-/tmp}/data
 
 echo "=> Test load command"
 docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password ${MARIADB_IMAGE}:${MARIADB_TAG} > /dev/null
