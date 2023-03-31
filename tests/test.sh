@@ -53,7 +53,7 @@ echo "=> Test import command"
 mkdir -p ${TMPDIR:-/tmp}/data
 (
 echo "CREATE TABLE testtable (a INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (a)) ENGINE=MyISAM;"
-) | gzip > ${TMPDIR:-/tmp}/data/foodb.sql
+) | gzip > ${TMPDIR:-/tmp}/data/foodb.sql.gz
 docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password ${MARIADB_IMAGE}:${MARIADB_TAG} > /dev/null
 docker run -i --name $TEST_NAME --link mariadb -e DATA_SRC=/data -v ${TMPDIR:-/tmp}/data:/data $TEST_CONTAINER import
 cleanup mariadb $TEST_NAME
