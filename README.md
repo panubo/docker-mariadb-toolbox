@@ -10,8 +10,8 @@ Documentation for each subcommand:
 
 - [backup](commands/backup.md)
 - [check](commands/check.md)
-- [copy-database](commands/copy-database.md)
 - [convert-to-innodb](commands/convert-to-innodb.md)
+- [copy-database](commands/copy-database.md)
 - [create-user-db](commands/create-user-db.md)
 - [import](commands/import.md)
 - [load](commands/load.md)
