@@ -10,6 +10,7 @@ CWD="$(dirname $0)/"
 
 echo "=> Starting $0"
 start_docker
+unset DOCKER_HOST # https://github.com/docker-library/docker/issues/200#issuecomment-550089770
 check_docker
 check_environment
 cleanup

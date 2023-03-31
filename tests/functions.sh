@@ -51,8 +51,8 @@ function wait_on_port {
 function start_docker {
     echo "=> Starting docker"
     if ! docker version > /dev/null 2>&1; then
-        wrapdocker > /dev/null 2>&1 &
-        sleep 5
+        dockerd-entrypoint.sh > /dev/null 2>&1 &
+        sleep 10
     fi
 }
 
@@ -63,7 +63,7 @@ function check_docker {
 
 function check_environment {
     echo "=> Testing environment"
-    docker version > /dev/null 
+    docker version > /dev/null
     which curl > /dev/null
 }
 

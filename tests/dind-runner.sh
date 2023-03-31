@@ -15,6 +15,7 @@ echo ">> Using Temp Dockerfile: $DOCKERFILE"
 
 cat << EOF > $DOCKERFILE
 FROM ${DIND_IMAGE}:${DIND_TAG}
+RUN apk add bash curl
 ADD .  /build/
 WORKDIR /build
 CMD ["/build/tests/runner.sh"]
