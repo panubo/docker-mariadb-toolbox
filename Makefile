@@ -16,6 +16,9 @@ test: ## Run tests (dind)
 test-local: ## Run tests (local)
 	./tests/runner.sh
 
+_ci_test:
+	true
+
 clean: ## Remove built image
 	docker rmi $(IMAGE_NAME):$(TAG)
 
