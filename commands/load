@@ -208,30 +208,24 @@ case "${#args[@]}" in
     ;;
   esac
 
-echo "Source:  ${source}"
-echo "SRC DB:  ${src_database}"
-echo "DEST DB: ${dest_database}"
+echo "Source: ${source}"
+echo "Source Database: ${src_database}"
+echo "Destination Database: ${dest_database}"
 
 # Set the umask, umask defaults to 0077 to keep files private during db dumping
 umask "${umask:-0077}"
 
-date="$(date --utc "+${date_format:-%Y%m%d%H%M%S}")"
-
 get_storage_commands "${source}"
-
-# Find latest
-latest="$(eval "${ls_cmd[@]}" "${source}" | sed -E -e '/[0-9]{14}/!d' -e 's/.*([0-9]{14})\/$/\1/' | sort | tail -n1)"
-echo "Latest: ${latest}"
-
-file="$(eval "${ls_cmd[@]}" "${source}/${latest}/" | sed -E -e 's/.*[\/ ]([^\/]*)$/\1/' | grep "^${src_database}[\.\-]" || true)"
-if [[ -z "${file}" ]]; then
-  echo "No save found for database in ${latest}"
+file_path="$(eval ${find_object} "${source}" "${src_database}")"
+if [[ -z "${file_path}" ]]; then
+  echo "No save found for database ${src_database} in ${source}"
   exit 1
+else
+  echo "Filepath: ${file_path}"
 fi
-echo "File: ${file}"
 
 if [[ "${compression:-auto}" == "auto" ]]; then
-  case "${file##*.}" in
+  case "${file_path##*.}" in
     "lz4")
       compression="lz4"
       ;;
@@ -268,9 +262,9 @@ wait_mariadb "${host}" "${port:-3306}"
 /usr/bin/mysql "${connection[@]}" -rs -e "DROP DATABASE IF EXISTS ${dest_database}; CREATE DATABASE ${dest_database}"
 
 if [[ "${#sed_cmd[@]}" -gt 0 ]]; then
-  eval "${fetch_cmd[@]}" "${source}/${latest}/${file}" "-" | "${decompression_cmd[@]}" | sed -E "${sed_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
+  eval "${fetch_cmd[@]}" "${file_path}" "-" | "${decompression_cmd[@]}" | sed -E "${sed_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
 else
-  eval "${fetch_cmd[@]}" "${source}/${latest}/${file}" "-" | "${decompression_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
+  eval "${fetch_cmd[@]}" "${file_path}" "-" | "${decompression_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
 fi
 
 echo ">> Finished."

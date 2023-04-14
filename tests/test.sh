@@ -65,8 +65,9 @@ docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password ${MARI
 docker run -d --name minio -p 9000:9000 ${MINIO_IMAGE}:${MINIO_TAG} server /data > /dev/null
 docker run --rm -i --link minio -e MC_HOST_minio=http://minioadmin:minioadmin@minio:9000 minio/mc:latest --quiet mb minio/backup
 docker run -i --name ${TEST_NAME}-save --link mariadb --link minio -e AWS_ACCESS_KEY_ID=minioadmin -e AWS_SECRET_ACCESS_KEY=minioadmin -e AWS_S3_ADDITIONAL_ARGS="--endpoint-url http://minio:9000" $TEST_CONTAINER save --host mariadb --password password s3://backup
-docker run -i --name ${TEST_NAME}-load --link mariadb --link minio -e AWS_ACCESS_KEY_ID=minioadmin -e AWS_SECRET_ACCESS_KEY=minioadmin -e AWS_S3_ADDITIONAL_ARGS="--endpoint-url http://minio:9000" $TEST_CONTAINER load --host mariadb --password password s3://backup/ mysql newdb
-cleanup mariadb minio ${TEST_NAME}-save ${TEST_NAME}-load
+docker run -i --name ${TEST_NAME}-load1 --link mariadb --link minio -e AWS_ACCESS_KEY_ID=minioadmin -e AWS_SECRET_ACCESS_KEY=minioadmin -e AWS_S3_ADDITIONAL_ARGS="--endpoint-url http://minio:9000" $TEST_CONTAINER load --host mariadb --password password s3://backup/ mysql newdb
+docker run -i --name ${TEST_NAME}-load2 --link mariadb --link minio -e AWS_ACCESS_KEY_ID=minioadmin -e AWS_SECRET_ACCESS_KEY=minioadmin -e AWS_S3_ADDITIONAL_ARGS="--endpoint-url http://minio:9000" $TEST_CONTAINER load --host mariadb --password password s3://backup/202 mysql newdb
+cleanup mariadb minio ${TEST_NAME}-save ${TEST_NAME}-load1 ${TEST_NAME}-load2
 
 echo "=> Test mysql command"
 docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password ${MARIADB_IMAGE}:${MARIADB_TAG} > /dev/null
