@@ -63,6 +63,7 @@ get_storage_commands() {
             fetch_cmd=( "gsutil" "cp" )
             storage_type="gs"
             gsutil_auth
+            find_object="find_object_gs"
             ;;
         s3://*)
             echo ">> Storage type: aws s3"
@@ -72,6 +73,7 @@ get_storage_commands() {
             ls_cmd=( "aws" "s3" "ls" "${AWS_S3_ADDITIONAL_ARGS}" )
             fetch_cmd=( "aws" "s3" "cp" "${AWS_S3_ADDITIONAL_ARGS}" )
             storage_type="s3"
+            find_object="find_object_s3"
             ;;
         file://*|/*|./*)
             echo ">> Storage type: file"
@@ -80,6 +82,7 @@ get_storage_commands() {
             fetch_cmd=( "cat" )
             source="${source#file:\/\/}"
             storage_type="file"
+            find_object="find_object_file"
             ;;
         *)
             echoerr "Unknown storage type"
@@ -135,4 +138,109 @@ gsutil_auth() {
           "[Credentials]" \
           "service_account = default" > /etc/boto.cfg
     fi
+}
+
+# helper functions
+function get_filename_from_object_path() {
+  # Returns just the filename portion of the full object path
+  echo "${1}" | sed -E -e 's/.*[\/ ]([^\/]*)$/\1/'
+}
+
+function get_basename_from_object_path() {
+  # Returns just the bucketname / base path
+  echo "${1}" | sed 's/\(file\|s3\|gs\):\/\/\([^\/]\+\)\/.*/\1:\/\/\2\//'
+}
+
+function get_timestamp_from_object_path() {
+  # Returns just the timestamp portion of the full object path 2-14 digits
+  echo "${1}" | sed -n 's/.*\/\([0-9]\{2,14\}\).*/\1/p; t; q;'
+}
+
+function check_object_exists() {
+  if [[ $(eval "${ls_cmd[@]}" "${1}") ]]; then
+    return 0
+  else
+    echoerr "Error file not found"
+    return 1
+  fi
+}
+
+function find_object_gs {
+  # find the object
+  # the following are are all valid
+  # gs://mybucket/20230413000003/my_database.sql.lz4
+  # gs://mybucket/20230413000003/ my_database
+  # gs://mybucket/ my_database
+  # gs://mybucket/20230413 my_database
+
+  source="${1}"
+  database="${2:-}"
+  timestamp="$(get_timestamp_from_object_path "${source}")"
+  base="$(get_basename_from_object_path "${source}")"
+
+  if [[ "${timestamp}" == "" ]]; then
+    # no timestamp in the path, find the latest
+    timestamp="$(eval "${ls_cmd[@]}" "${source}" | sed -E -e '/[0-9]{14}/!d' -e 's/.*([0-9]{14})\/$/\1/' | sort | tail -n1)"
+    full_path="$(eval "${ls_cmd[@]}" "${source}${timestamp}/" | grep "/${database}[\.\-]")"
+  else
+    # has timestamp, either fully qualified, or needs expanding
+    if [[ $source =~ [0-9]{14}/${database} ]]; then
+      # should be complete path
+      full_path="${source}"
+    elif [[ $source =~ [0-9]{14} ]]; then
+      # complete timestamp
+      full_path="$(eval "${ls_cmd[@]}" "${source}" | grep "/${database}[\.\-]")"
+    else
+      # partial timestamp. search for matching object path
+      full_path="$(eval "${ls_cmd[@]}" "${base}${timestamp}*/" | grep "/${database}[\.\-]")"
+    fi
+  fi
+  check_object_exists "${full_path}" || { echoerr "Error file not found"; exit 1; }
+  echo "${full_path}"
+}
+
+
+function find_object_s3 {
+  # find the object
+  # the following are are all valid
+  # s3://mybucket/20230413000003/my_database.sql.lz4
+  # s3://mybucket/20230413000003/ my_database
+  # s3://mybucket/ my_database
+  # s3://mybucket/20230413 my_database
+
+  source="${1}"
+  database="${2:-}"
+  timestamp="$(get_timestamp_from_object_path "${source}")"
+  base="$(get_basename_from_object_path "${source}")"
+
+  if [[ "${timestamp}" == "" ]]; then
+    # no timestamp in the path, find the latest
+    timestamp="$(eval "${ls_cmd[@]}" "${base}" | sed -E -e '/[0-9]{14}/!d' -e 's/.*([0-9]{14})\/$/\1/' | sort | tail -n1)"
+    file="$(eval "${ls_cmd[@]}" "${base}${timestamp}/" | sed -E -e 's/.*[\/ ]([^\/]*)$/\1/' | grep "^${database}[\.\-]")"
+    full_path="${base}${timestamp}/${file}"
+  else
+    # has timestamp, either fully qualified, or needs expanding
+    if [[ $source =~ [0-9]{14}/${database} ]]; then
+      # should be complete path
+      full_path="${source}"
+    elif [[ $source =~ [0-9]{14} ]]; then
+      # complete timestamp
+      file="$(eval "${ls_cmd[@]}" "${source}" | sed -E -e 's/.*[\/ ]([^\/]*)$/\1/' | grep "^${database}[\.\-]")"
+      full_path="${source}${file}"
+    else
+      # partial timestamp. search for matching object path
+      timestamp="$(eval "${ls_cmd[@]}" "${base}" | sed -E -e '/[0-9]{14}/!d' -e 's/.*([0-9]{14})\/$/\1/' | grep "${timestamp}")"
+      timestamp_count=$(wc -l <<<"${timestamp}")
+      [[ "${timestamp_count}" -gt 1 ]] && { echoerr "Error too many items found. Timestamp is not distinct."; exit 1; }
+      file="$(eval "${ls_cmd[@]}" "${base}${timestamp}/" | sed -E -e 's/.*[\/ ]([^\/]*)$/\1/' | grep "^${database}[\.\-]")"
+      full_path="${base}${timestamp}/${file}"
+    fi
+  fi
+  check_object_exists "${full_path}" || { echoerr "Error file not found"; exit 1; }
+  echo "${full_path}"
+}
+
+function find_object_file {
+  echoerr "find_object_file not implemented"
+  exit 1
 }
