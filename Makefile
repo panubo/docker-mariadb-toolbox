@@ -19,6 +19,9 @@ test-local: ## Run tests (local)
 _ci_test:
 	true
 
+shell: ## Run shell
+	docker run --rm -t -i --entrypoint /bin/bash $(IMAGE_NAME):$(TAG)
+
 clean: ## Remove built image
 	docker rmi $(IMAGE_NAME):$(TAG)
 

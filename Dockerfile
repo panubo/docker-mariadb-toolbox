@@ -1,4 +1,4 @@
-FROM alpine:3.17
+FROM alpine:3.18
 
 RUN set -x \
   && apk add --update bash findutils mariadb-client gzip bzip2 lz4 xz unzip zip coreutils python3 rsync curl \
@@ -7,8 +7,8 @@ RUN set -x \
 
 # Install Gcloud SDK (required for gsutil workload identity authentication)
 ENV \
-  GCLOUD_VERSION=424.0.0 \
-  GCLOUD_CHECKSUM=1fed39626f23352e0f97623d5009ff1bb6c4ffd3875c85f4205f309292696b18
+  GCLOUD_VERSION=432.0.0 \
+  GCLOUD_CHECKSUM=b24ba27d57463e08db859b7941cf4d7c33cb3af5865095639e3e0b2055cbec66
 
 RUN set -x \
   && apk --no-cache add python3 \
@@ -27,8 +27,8 @@ ENV \
   PYTHONIOENCODING=UTF-8 \
   PYTHONUNBUFFERED=0 \
   PAGER=more \
-  AWS_CLI_VERSION=1.27.103 \
-  AWS_CLI_CHECKSUM=0fed454146160807e273c4fd9bb1d0ba0926e3fb8ed3fc55e9251ebd2d53407c
+  AWS_CLI_VERSION=1.27.141 \
+  AWS_CLI_CHECKSUM=6fd0b48812f8093b9328600ac86c453d8fce30408456dc78603c18404795e16a
 
 RUN set -x \
   && apk --update add --no-cache ca-certificates wget unzip \
