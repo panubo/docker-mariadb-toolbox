@@ -1,4 +1,4 @@
-FROM alpine:3.18
+FROM alpine:3.19
 
 RUN set -x \
   && apk add --update bash findutils mariadb-client gzip bzip2 lz4 xz unzip zip coreutils python3 rsync curl \
@@ -7,8 +7,8 @@ RUN set -x \
 
 # Install Gcloud SDK (required for gsutil workload identity authentication)
 ENV \
-  GCLOUD_VERSION=432.0.0 \
-  GCLOUD_CHECKSUM=b24ba27d57463e08db859b7941cf4d7c33cb3af5865095639e3e0b2055cbec66
+  GCLOUD_VERSION=459.0.0 \
+  GCLOUD_CHECKSUM=c7c02262cded63dc2f017aecfe71532da3712ab1b0a8f8d217dc42bcba259de8
 
 RUN set -x \
   && apk --no-cache add python3 \
@@ -26,21 +26,10 @@ RUN set -x \
 ENV \
   PYTHONIOENCODING=UTF-8 \
   PYTHONUNBUFFERED=0 \
-  PAGER=more \
-  AWS_CLI_VERSION=1.27.141 \
-  AWS_CLI_CHECKSUM=6fd0b48812f8093b9328600ac86c453d8fce30408456dc78603c18404795e16a
+  PAGER=more 
 
 RUN set -x \
-  && apk --update add --no-cache ca-certificates wget unzip \
-  && cd /tmp \
-  && wget -nv https://s3.amazonaws.com/aws-cli/awscli-bundle-${AWS_CLI_VERSION}.zip -O /tmp/awscli-bundle-${AWS_CLI_VERSION}.zip \
-  && echo "${AWS_CLI_CHECKSUM}  awscli-bundle-${AWS_CLI_VERSION}.zip" > /tmp/SHA256SUM \
-  && ( cd /tmp; sha256sum -c SHA256SUM || ( echo "Expected $(sha256sum awscli-bundle-${AWS_CLI_VERSION}.zip)"; exit 1; )) \
-  && unzip awscli-bundle-${AWS_CLI_VERSION}.zip \
-  && /tmp/awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws \
-  && apk del wget unzip \
-  && rm -rf /var/cache/apk/* \
-  && rm -rf /tmp/* \
+  && apk --update add --no-cache ca-certificates aws-cli \
   ;
 
 COPY commands /commands
