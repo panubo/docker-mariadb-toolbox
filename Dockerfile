@@ -1,7 +1,12 @@
 FROM alpine:3.19
 
+ENV \
+  PYTHONIOENCODING=UTF-8 \
+  PYTHONUNBUFFERED=0 \
+  PAGER=more 
+
 RUN set -x \
-  && apk add --update bash findutils mariadb-client gzip bzip2 lz4 xz unzip zip coreutils python3 rsync curl \
+  && apk add --update bash findutils mariadb-client gzip bzip2 lz4 xz unzip zip coreutils python3 rsync curl ca-certificates aws-cli \
   && rm -rf /var/cache/apk/* \
   ;
 
@@ -20,16 +25,6 @@ RUN set -x \
   && ln -s /google-cloud-sdk/bin/gcloud /usr/local/bin/ \
   && ln -s /google-cloud-sdk/bin/gsutil /usr/local/bin/ \
   && rm -rf /tmp/* /root/.config/gcloud \
-  ;
-
-# Install AWS CLI
-ENV \
-  PYTHONIOENCODING=UTF-8 \
-  PYTHONUNBUFFERED=0 \
-  PAGER=more 
-
-RUN set -x \
-  && apk --update add --no-cache ca-certificates aws-cli \
   ;
 
 COPY commands /commands
