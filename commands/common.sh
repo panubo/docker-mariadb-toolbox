@@ -6,9 +6,9 @@ USER=${DATABASE_USER-root}
 PASS=${DATABASE_PASS-${MARIADB_ENV_MYSQL_ROOT_PASSWORD}}
 # This could be made db specific by using --defaults-file=
 MYCONN="--user=${USER} --password=${PASS} --host=${HOST} --port=${PORT}"
-MYSQL="mysql ${MYCONN}"
-MYSQLDUMP="mysqldump $MYCONN"
-MYCHECK="mysqlcheck ${MYCONN}"
+MYSQL="mariadb ${MYCONN}"
+MYSQLDUMP="mariadb-dump $MYCONN"
+MYCHECK="mariadb-check ${MYCONN}"
 GZIP="gzip --fast"
 
 # this function is not actually called anywhere
