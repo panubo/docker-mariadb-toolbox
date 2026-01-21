@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
+#
+# This script copies a database from a source to a destination. It does
+# this by dumping the source database to a file, and then loading that
+# file into the destination database.
 
 set -e -o pipefail
 [ "$DEBUG" == 'true' ] && set -x
-. "$(dirname $0)/"common.sh
+# shellcheck disable=SC1090
+. "$(dirname "${0}")/common.sh"
 
 if [ "$1" == '--no-delete-database' ]; then
     shift;

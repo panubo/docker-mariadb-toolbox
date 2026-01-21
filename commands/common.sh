@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+#
+# This script contains common functions and variables used by the other
+# scripts in this directory. It defines variables for connecting to the
+# database, and functions for waiting for the database to be available,
+# generating passwords, and handling different storage and compression
+# types.
+#
 
 HOST=${DATABASE_HOST-${MARIADB_PORT_3306_TCP_ADDR-localhost}}
 PORT=${DATABASE_PORT-${MARIADB_PORT_3306_TCP_PORT-3306}}
@@ -80,7 +87,7 @@ get_storage_commands() {
             save_cmd=( "ls" )
             ls_cmd=( "ls" )
             fetch_cmd=( "cat" )
-            source="${source#file:\/\/}"
+            source="${source#file://}"
             storage_type="file"
             find_object="find_object_file"
             ;;

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+#
+# This script displays the help message, which lists the available commands.
+#
 
 set -e
 

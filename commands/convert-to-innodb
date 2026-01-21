@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+#
+# This script converts all tables in a specified database from MyISAM to
+# InnoDB. It iterates through all the tables in the specified database,
+# and if the table is using the MyISAM engine, it is converted to InnoDB.
+#
 
 set -e -o pipefail
 [ "$DEBUG" == 'true' ] && set -x
@@ -6,7 +11,7 @@ set -e -o pipefail
 
 wait_mariadb
 
-DATABASES=$@
+DATABASES=$*
 
 # Convert to Innodb
 for DB in $DATABASES; do

@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
+#
+# This script creates a new user and database. If the `--no-create-database`
+# flag is passed, it will only create the user. It will also generate a
+# random password if one is not provided.
+#
 
 set -e -o pipefail
 [ "$DEBUG" == 'true' ] && set -x
-. "$(dirname $0)/"common.sh
+# shellcheck disable=SC1090
+. "$(dirname "${0}")/common.sh"
 
 if [ "$1" == '--no-create-database' ]; then
     shift;

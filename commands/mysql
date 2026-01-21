@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
+#
+# This script starts a mysql client.
+#
 
 set -e -o pipefail
 [ "$DEBUG" == 'true' ] && set -x
-. "$(dirname $0)/"common.sh
+# shellcheck disable=SC1090
+. "$(dirname "${0}")/common.sh"
 
 wait_mariadb
 

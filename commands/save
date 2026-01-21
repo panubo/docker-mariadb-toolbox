@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+#
+# This script saves a database to a variety of destinations.
+#
+
 # shellcheck disable=SC2034 shell=bash
 
 set -eo pipefail
@@ -233,7 +237,7 @@ wait_mariadb "${host}" "${port:-3306}"
 # Saving a list of all databases as an array
 echo "${skip_databases[@]}"
 skip_dbs="$(printf "|%s" "${skip_databases[@]}")"
-mapfile -t all_databases < <( /usr/bin/mysql "${connection[@]}" -rs -e "SHOW DATABASES" | grep -v -E "^(cloudsqladmin|information_schema|performance_schema${skip_dbs})$" )
+mapfile -t all_databases < <( /usr/bin/mariadb "${connection[@]}" -rs -e "SHOW DATABASES" | grep -v -E "^(cloudsqladmin|information_schema|performance_schema${skip_dbs})$" )
 
 echo "All databases:"
 echo "${all_databases[*]}"
@@ -257,7 +261,7 @@ fi
 for database in "${databases[@]}"; do
   save_dest="${save_path}${database}${final_ext}"
   echo ">> Saving ${database} to ${save_dest}"
-  /usr/bin/mysqldump "${connection[@]}" "${cmd_args[@]}" "${database}" | "${compression_cmd[@]}" | tee >(sha256sum > /tmp/sha.txt) > "${save_dest}"
+  /usr/bin/mariadb-dump "${connection[@]}" "${cmd_args[@]}" "${database}" | "${compression_cmd[@]}" | tee >(sha256sum > /tmp/sha.txt) > "${save_dest}"
   awk "{print \$1 \"  ${database}${final_ext}\"}" < /tmp/sha.txt | tee -a "${save_path}/CHECKSUM"
 done
 
