@@ -41,13 +41,13 @@ For more detailed information on each command, please refer to their respective 
 To use the MariaDB Toolbox, you can run the Docker image with the desired command. The following example shows how to display the usage information:
 
 ```shell
-docker run --rm -it --link myserver:mariadb quay.io/panubo/mariadb-toolbox:1.7.0
+docker run --rm -it --link myserver:mariadb quay.io/panubo/mariadb-toolbox:1.10.0
 ```
 
 To execute a specific command, append it to the `docker run` command:
 
 ```shell
-docker run --rm -it --link myserver:mariadb quay.io/panubo/mariadb-toolbox:1.7.0 <subcommand>
+docker run --rm -it --link myserver:mariadb quay.io/panubo/mariadb-toolbox:1.10.0 <subcommand>
 ```
 
 ### Configuration
