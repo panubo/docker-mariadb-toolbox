@@ -6,8 +6,6 @@
 
 A versatile Docker image offering a collection of scripts to streamline common MySQL/MariaDB database administration tasks. This toolbox is designed with a Docker-centric approach, ensuring compatibility with Amazon RDS and GCP Cloud SQL wherever possible.
 
-This image is available on quay.io `quay.io/panubo/postfix` and AWS ECR Public `public.ecr.aws/panubo/postfix`.
-
 <!-- BEGIN_TOP_PANUBO -->
 > [!IMPORTANT]
 > **Maintained by Panubo** — Cloud Native & SRE Consultants in Sydney.
