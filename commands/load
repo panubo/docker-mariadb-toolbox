@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+#
+# This script loads a database dump from a variety of sources.
+#
+
 # shellcheck disable=SC2034 shell=bash
 
 set -eo pipefail
@@ -259,12 +263,12 @@ done
 
 wait_mariadb "${host}" "${port:-3306}"
 
-/usr/bin/mysql "${connection[@]}" -rs -e "DROP DATABASE IF EXISTS ${dest_database}; CREATE DATABASE ${dest_database}"
+/usr/bin/mariadb "${connection[@]}" -rs -e "DROP DATABASE IF EXISTS ${dest_database}; CREATE DATABASE ${dest_database}"
 
 if [[ "${#sed_cmd[@]}" -gt 0 ]]; then
-  eval "${fetch_cmd[@]}" "${file_path}" "-" | "${decompression_cmd[@]}" | sed -E "${sed_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
+  eval "${fetch_cmd[@]}" "${file_path}" "-" | "${decompression_cmd[@]}" | sed -E "${sed_cmd[@]}" | /usr/bin/mariadb "${connection_no_db[@]}" "${dest_database}"
 else
-  eval "${fetch_cmd[@]}" "${file_path}" "-" | "${decompression_cmd[@]}" | /usr/bin/mysql "${connection_no_db[@]}" "${dest_database}"
+  eval "${fetch_cmd[@]}" "${file_path}" "-" | "${decompression_cmd[@]}" | /usr/bin/mariadb "${connection_no_db[@]}" "${dest_database}"
 fi
 
 echo ">> Finished."

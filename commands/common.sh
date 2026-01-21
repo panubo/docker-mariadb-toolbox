@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+#
+# This script contains common functions and variables used by the other
+# scripts in this directory. It defines variables for connecting to the
+# database, and functions for waiting for the database to be available,
+# generating passwords, and handling different storage and compression
+# types.
+#
 
 HOST=${DATABASE_HOST-${MARIADB_PORT_3306_TCP_ADDR-localhost}}
 PORT=${DATABASE_PORT-${MARIADB_PORT_3306_TCP_PORT-3306}}
@@ -6,9 +13,9 @@ USER=${DATABASE_USER-root}
 PASS=${DATABASE_PASS-${MARIADB_ENV_MYSQL_ROOT_PASSWORD}}
 # This could be made db specific by using --defaults-file=
 MYCONN="--user=${USER} --password=${PASS} --host=${HOST} --port=${PORT}"
-MYSQL="mysql ${MYCONN}"
-MYSQLDUMP="mysqldump $MYCONN"
-MYCHECK="mysqlcheck ${MYCONN}"
+MYSQL="mariadb ${MYCONN}"
+MYSQLDUMP="mariadb-dump $MYCONN"
+MYCHECK="mariadb-check ${MYCONN}"
 GZIP="gzip --fast"
 
 # this function is not actually called anywhere
@@ -80,7 +87,7 @@ get_storage_commands() {
             save_cmd=( "ls" )
             ls_cmd=( "ls" )
             fetch_cmd=( "cat" )
-            source="${source#file:\/\/}"
+            source="${source#file://}"
             storage_type="file"
             find_object="find_object_file"
             ;;

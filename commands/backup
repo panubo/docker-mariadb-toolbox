@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
+#
+# This script performs a backup of all databases, or a specified database.
+# It stores the backup in the $BACKUP_DIR directory, and prunes old backups
+# based on the $RETENTION_DAYS variable. It also maintains a 'latest'
+# symlink to the most recent backup.
+#
 
 set -e -o pipefail
 [ "$DEBUG" == 'true' ] && set -x
-. "$(dirname $0)/"common.sh
+# shellcheck disable=SC1090
+. "$(dirname "${0}")/common.sh"
 
 if [ -z "$BACKUP_DIR" ]; then
     echo "BACKUP_DIR not set"
@@ -17,7 +24,7 @@ RETENTION_DAYS=${RETENTION_DAYS-14}
 if [ -z "$1" ]; then
     DATABASES=$($MYSQL -rs -e "SHOW DATABASES" | grep -v -E '(cloudsqladmin|information_schema|performance_schema)')
 else
-    DATABASES=$@
+    DATABASES=$*
 fi
 
 # Perform the backup
@@ -25,13 +32,13 @@ mkdir -p "$BACKUP_PATH"
 echo -n "Dumping..."
 for DB in $DATABASES; do
     echo -n " $DB"
-    $MYSQLDUMP --opt --single-transaction --events --databases ${DB} | $GZIP > "${BACKUP_PATH}/${DB}.sql.gz"
+    $MYSQLDUMP --opt --single-transaction --events --databases "${DB}" | $GZIP > "${BACKUP_PATH}/${DB}.sql.gz"
 done
 echo ". Done."
 
 # Delete expired backups
 echo -n "Cleanup... "
-find ${BACKUP_DIR} -name "*.sql.gz" -mtime +$RETENTION_DAYS -exec rm -f {} \;
+find ${BACKUP_DIR} -name "*.sql.gz" -mtime +${RETENTION_DAYS} -exec rm -f {} \;
 find ${BACKUP_DIR} -type d -empty -delete
 
 # Link latest backup (done as hardlinks in order to make it easier to backup with rsync)
@@ -40,7 +47,7 @@ rm -rf "${BACKUP_DIR}/latest"
 mkdir "${BACKUP_DIR}/latest"
 for B in $BACKUP_PATH/*; do
     TARGET=$(basename $B)
-    ln $B "${BACKUP_DIR}/latest/$TARGET"
+    ln ${B} "${BACKUP_DIR}/latest/$TARGET"
 done
 
 echo "Done."

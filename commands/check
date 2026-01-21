@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
+#
+# This script checks all databases, or a specified database for errors.
+# It uses the `mariadb-check` command with the `--auto-repair` option to
+# automatically fix any errors that are found.
+#
 
 set -e -o pipefail
 [ "$DEBUG" == 'true' ] && set -x
-. "$(dirname $0)/"common.sh
+# shellcheck disable=SC1090
+. "$(dirname "${0}")/common.sh"
 
 wait_mariadb
 
 if [ -z "$1" ]; then
     DATABASES=$($MYSQL -rs -e "SHOW DATABASES" | grep -v -E '(cloudsqladmin|information_schema|performance_schema)')
 else
-    DATABASES=$@
+    DATABASES=$*
 fi
 
 # Perform the check

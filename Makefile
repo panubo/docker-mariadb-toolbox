@@ -16,7 +16,7 @@ test: ## Run tests (dind)
 test-local: ## Run tests (local)
 	./tests/runner.sh
 
-_ci_test:
+_ci_test: test-local
 	true
 
 shell: ## Run shell
