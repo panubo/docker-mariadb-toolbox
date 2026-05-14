@@ -26,6 +26,7 @@ This image is available on quay.io `quay.io/panubo/mariadb-toolbox` and AWS ECR 
 
 Here's a list of the available commands and their functions:
 
+- [`analyze`](./commands/analyze.md): Analyzes database tables.
 - [`backup`](./commands/backup.md): Dumps databases to a timestamped directory in a specified backup location.
 - [`check`](./commands/check.md): Checks databases for errors and inconsistencies.
 - [`convert-to-innodb`](./commands/convert-to-innodb.md): Converts a database's tables to the InnoDB storage engine.
@@ -34,6 +35,7 @@ Here's a list of the available commands and their functions:
 - [`import`](./commands/import.md): Imports database dumps from a local directory.
 - [`load`](./commands/load.md): Loads a database dump from object storage (AWS S3, GCS) or the local filesystem into a database.
 - [`mysql`](./commands/mysql.md): Starts an interactive MySQL/MariaDB client session.
+- [`optimize`](./commands/optimize.md): Optimizes database tables.
 - [`save`](./commands/save.md): Saves database dumps to object storage (AWS S3, GCS) or the local filesystem with advanced options.
 
 For more detailed information on each command, please refer to their respective documentation in the `commands` directory.
@@ -43,13 +45,13 @@ For more detailed information on each command, please refer to their respective 
 To use the MariaDB Toolbox, you can run the Docker image with the desired command. The following example shows how to display the usage information:
 
 ```shell
-docker run --rm -it --link myserver:mariadb quay.io/panubo/mariadb-toolbox:1.10.0
+docker run --rm -it --link myserver:mariadb quay.io/panubo/mariadb-toolbox:1.11.0
 ```
 
 To execute a specific command, append it to the `docker run` command:
 
 ```shell
-docker run --rm -it --link myserver:mariadb quay.io/panubo/mariadb-toolbox:1.10.0 <subcommand>
+docker run --rm -it --link myserver:mariadb quay.io/panubo/mariadb-toolbox:1.11.0 <subcommand>
 ```
 
 ### Configuration

@@ -1,6 +1,6 @@
-# Check database
+# Analyze database
 
-Command to check databases.
+Command to analyze databases.
 
 ## Configuration
 
@@ -15,10 +15,10 @@ Alternatively specify the individual variables:
 
 ### Options
 
-- `<databases>...` name of database(s) to check. If not specified all databases will be checked.
+- `<databases>...` name of database(s) to analyze. If not specified all databases will be analyzed.
 
 ## Usage Example
 
 ```shell
-docker run --rm -i -t -e DATABASE_HOST=172.19.66.4 -e DATABASE_USER=root -e DATABASE_PASS=foo docker.io/panubo/mariadb-toolbox:1.11.0 check
+docker run --rm -i -t -e DATABASE_HOST=172.19.66.4 -e DATABASE_USER=root -e DATABASE_PASS=foo docker.io/panubo/mariadb-toolbox:1.11.0 analyze
 ```

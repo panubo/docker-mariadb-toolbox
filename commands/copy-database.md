@@ -20,6 +20,6 @@ Alternatively specify the individual variables:
 
 ## Usage Example
 
-```
-docker run --rm -i -t -v /mnt/data00/migrations:/data -e DATABASE_HOST=172.19.66.4 -e DATABASE_USER=root -e DATABASE_PASS=foo docker.io/panubo/mariadb-toolbox:1.6.0 copy-database <source-db> <destination-db>
+```shell
+docker run --rm -i -t -v /mnt/data00/migrations:/data -e DATABASE_HOST=172.19.66.4 -e DATABASE_USER=root -e DATABASE_PASS=foo docker.io/panubo/mariadb-toolbox:1.11.0 copy-database <source-db> <destination-db>
 ```
