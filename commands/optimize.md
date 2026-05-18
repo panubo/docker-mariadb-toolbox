@@ -1,6 +1,6 @@
-# Check database
+# Optimize database
 
-Command to check databases.
+Command to optimize databases.
 
 ## Configuration
 
@@ -15,10 +15,10 @@ Alternatively specify the individual variables:
 
 ### Options
 
-- `<databases>...` name of database(s) to check. If not specified all databases will be checked.
+- `<databases>...` name of database(s) to optimize. If not specified all databases will be optimized.
 
 ## Usage Example
 
 ```shell
-docker run --rm -i -t -e DATABASE_HOST=172.19.66.4 -e DATABASE_USER=root -e DATABASE_PASS=foo docker.io/panubo/mariadb-toolbox:1.11.0 check
+docker run --rm -i -t -e DATABASE_HOST=172.19.66.4 -e DATABASE_USER=root -e DATABASE_PASS=foo docker.io/panubo/mariadb-toolbox:1.11.0 optimize
 ```

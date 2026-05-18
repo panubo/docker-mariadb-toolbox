@@ -18,6 +18,16 @@ docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password ${MARI
 docker run -i --name $TEST_NAME --link mariadb $TEST_CONTAINER check
 cleanup mariadb $TEST_NAME
 
+echo "=> Test analyze command"
+docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password ${MARIADB_IMAGE}:${MARIADB_TAG} > /dev/null
+docker run -i --name $TEST_NAME --link mariadb $TEST_CONTAINER analyze
+cleanup mariadb $TEST_NAME
+
+echo "=> Test optimize command"
+docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password ${MARIADB_IMAGE}:${MARIADB_TAG} > /dev/null
+docker run -i --name $TEST_NAME --link mariadb $TEST_CONTAINER optimize
+cleanup mariadb $TEST_NAME
+
 echo "=> Test convert-to-innodb command"
 docker run -d --name mariadb -p 3306:3306 -e MYSQL_ROOT_PASSWORD=password ${MARIADB_IMAGE}:${MARIADB_TAG} > /dev/null
 (
